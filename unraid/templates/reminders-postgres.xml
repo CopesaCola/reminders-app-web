@@ -1,0 +1,38 @@
+<?xml version="1.0"?>
+<Container version="2">
+  <Name>reminders-postgres</Name>
+  <Repository>postgres:16-alpine</Repository>
+  <Registry>https://hub.docker.com/_/postgres</Registry>
+  <Network>reminders</Network>
+  <MyIP/>
+  <Shell>sh</Shell>
+  <Privileged>false</Privileged>
+  <Support>https://github.com/YOU/reminders-app-web/issues</Support>
+  <Project>https://github.com/YOU/reminders-app-web</Project>
+  <Overview>Postgres 16 backing the Accountability goal tracker. Pairs with the reminders-app container.</Overview>
+  <Category>Productivity: Tools: Other:</Category>
+  <WebUI/>
+  <TemplateURL/>
+  <Icon>https://www.postgresql.org/media/img/about/press/elephant.png</Icon>
+  <ExtraParams>--restart=unless-stopped</ExtraParams>
+  <PostArgs/>
+  <CPUset/>
+  <DateInstalled/>
+  <DonateText/>
+  <DonateLink/>
+  <Requires>Create a custom Docker network named "reminders" first: open a console and run `docker network create reminders`. Both this container and reminders-app must join it so they can reach each other by container name.</Requires>
+  <Description>
+Postgres 16 dedicated to the Accountability app.
+
+Before adding: create the shared Docker network the app and DB use to talk to each other. From the Unraid terminal:
+
+  docker network create reminders
+
+The reminders-app container's DATABASE_URL points at this container by name (reminders-postgres). No host port is published by default — only the app needs to reach it, and it does so over the internal network.
+  </Description>
+  <Config Name="Data" Target="/var/lib/postgresql/data" Default="/mnt/user/appdata/reminders/postgres" Mode="rw" Description="Where Postgres stores its data on disk. Back this up with the CA Backup/Restore plugin." Type="Path" Display="always" Required="true" Mask="false">/mnt/user/appdata/reminders/postgres</Config>
+  <Config Name="POSTGRES_USER" Target="POSTGRES_USER" Default="reminders" Mode="" Description="Database username. Must match the user in the app's DATABASE_URL." Type="Variable" Display="always" Required="true" Mask="false">reminders</Config>
+  <Config Name="POSTGRES_PASSWORD" Target="POSTGRES_PASSWORD" Default="" Mode="" Description="Database password. Must match the password in the app's DATABASE_URL. Use a long random string." Type="Variable" Display="always" Required="true" Mask="true"/>
+  <Config Name="POSTGRES_DB" Target="POSTGRES_DB" Default="reminders" Mode="" Description="Database name. Must match the database in the app's DATABASE_URL." Type="Variable" Display="always" Required="true" Mask="false">reminders</Config>
+  <Config Name="Postgres port (LAN)" Target="5432" Default="" Mode="tcp" Description="OPTIONAL. Leave blank to keep Postgres internal to Docker. Only publish if you want to connect with an external client like pgAdmin." Type="Port" Display="advanced" Required="false" Mask="false"/>
+</Container>

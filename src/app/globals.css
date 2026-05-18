@@ -1,0 +1,70 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --bg: 250 250 249;
+  --fg: 28 25 23;
+  --muted: 120 113 108;
+  --card: 255 255 255;
+  --border: 231 229 228;
+  --accent: 14 165 233;
+  --ok: 34 197 94;
+  --warn: 234 179 8;
+  --bad: 239 68 68;
+}
+
+.dark {
+  --bg: 12 10 9;
+  --fg: 250 250 249;
+  --muted: 168 162 158;
+  --card: 24 24 27;
+  --border: 39 39 42;
+  --accent: 56 189 248;
+  --ok: 74 222 128;
+  --warn: 250 204 21;
+  --bad: 248 113 113;
+}
+
+html,
+body {
+  background-color: rgb(var(--bg));
+  color: rgb(var(--fg));
+  -webkit-font-smoothing: antialiased;
+}
+
+button,
+input,
+textarea,
+select {
+  font: inherit;
+  color: inherit;
+}
+
+input[type='checkbox'] {
+  accent-color: rgb(var(--accent));
+}
+
+.card {
+  @apply bg-card border border-border rounded-xl;
+}
+
+.btn {
+  @apply inline-flex items-center justify-center gap-2 rounded-lg px-3 py-2 text-sm font-medium border border-border hover:bg-muted/10 transition-colors;
+}
+
+.btn-primary {
+  @apply btn bg-accent text-white border-transparent hover:opacity-90;
+}
+
+.btn-danger {
+  @apply btn bg-bad text-white border-transparent hover:opacity-90;
+}
+
+.input {
+  @apply w-full rounded-lg border border-border bg-card px-3 py-2 outline-none focus:border-accent;
+}
+
+.label {
+  @apply text-sm font-medium text-muted;
+}

@@ -1,0 +1,70 @@
+<?xml version="1.0"?>
+<Container version="2">
+  <Name>reminders-app</Name>
+  <Repository>reminders-app:local</Repository>
+  <Registry/>
+  <Network>reminders</Network>
+  <MyIP/>
+  <Shell>sh</Shell>
+  <Privileged>false</Privileged>
+  <Support>https://github.com/YOU/reminders-app-web/issues</Support>
+  <Project>https://github.com/YOU/reminders-app-web</Project>
+  <Overview>Single-user goal tracker with push reminders, calendar heatmap, streaks, and PWA install. Pairs with the reminders-postgres container.</Overview>
+  <Category>Productivity: Tools: Other:</Category>
+  <WebUI>http://[IP]:[PORT:3000]/</WebUI>
+  <TemplateURL/>
+  <Icon>https://raw.githubusercontent.com/YOU/reminders-app-web/main/public/icons/icon.svg</Icon>
+  <ExtraParams>--restart=unless-stopped</ExtraParams>
+  <PostArgs/>
+  <CPUset/>
+  <DateInstalled/>
+  <DonateText/>
+  <DonateLink/>
+  <Requires>1) The reminders Docker network must exist: `docker network create reminders`. 2) The image must be built locally first: `cd /mnt/user/appdata/reminders/app &amp;&amp; docker build -t reminders-app:local .` 3) The reminders-postgres container should be running before this one starts.</Requires>
+  <Description>
+Accountability app — personal goal tracker with push reminders.
+
+**Before adding:**
+
+1. Clone the repo to appdata and build the image:
+
+       mkdir -p /mnt/user/appdata/reminders
+       cd /mnt/user/appdata/reminders
+       git clone https://github.com/YOU/reminders-app-web.git app
+       cd app
+       docker build -t reminders-app:local .
+
+2. Create the shared Docker network if you haven't: `docker network create reminders`
+3. Install the reminders-postgres template first.
+
+**Required env vars** (see fields below):
+- DATABASE_URL — points at the postgres container by name
+- APP_PASSWORD — your login password
+- SESSION_SECRET — 32+ char random hex
+- VAPID_PUBLIC_KEY / VAPID_PRIVATE_KEY — generate with `npm run vapid:gen`
+- CRON_SECRET — bearer token for the User Scripts cron
+
+**To update:** SSH in, `cd /mnt/user/appdata/reminders/app && git pull && docker build -t reminders-app:local .`, then click "Apply" or restart the container. Migrations run automatically on each start.
+  </Description>
+  <Config Name="WebUI Port" Target="3000" Default="3000" Mode="tcp" Description="HTTP port the app listens on. Point your reverse proxy / Cloudflare Tunnel at this." Type="Port" Display="always" Required="true" Mask="false">3000</Config>
+
+  <Config Name="DATABASE_URL" Target="DATABASE_URL" Default="postgres://reminders:CHANGEME@reminders-postgres:5432/reminders" Mode="" Description="Postgres connection string. Host is the postgres container name (reminders-postgres). User/password/db must match the postgres container's env vars." Type="Variable" Display="always" Required="true" Mask="true">postgres://reminders:CHANGEME@reminders-postgres:5432/reminders</Config>
+
+  <Config Name="APP_PASSWORD" Target="APP_PASSWORD" Default="" Mode="" Description="The password you'll use to log into the app. Pick something strong." Type="Variable" Display="always" Required="true" Mask="true"/>
+
+  <Config Name="SESSION_SECRET" Target="SESSION_SECRET" Default="" Mode="" Description="32+ character random hex for cookie encryption. Generate with: docker run --rm node:20-alpine node -e &quot;console.log(require('crypto').randomBytes(32).toString('hex'))&quot;" Type="Variable" Display="always" Required="true" Mask="true"/>
+
+  <Config Name="VAPID_PUBLIC_KEY" Target="VAPID_PUBLIC_KEY" Default="" Mode="" Description="VAPID public key for Web Push. Generate with: docker run --rm -v $PWD:/work -w /work node:20-alpine sh -c 'npm install --no-save web-push &amp;&amp; node scripts/gen-vapid.mjs'" Type="Variable" Display="always" Required="true" Mask="false"/>
+
+  <Config Name="VAPID_PRIVATE_KEY" Target="VAPID_PRIVATE_KEY" Default="" Mode="" Description="VAPID private key (paired with the public key above)." Type="Variable" Display="always" Required="true" Mask="true"/>
+
+  <Config Name="VAPID_SUBJECT" Target="VAPID_SUBJECT" Default="mailto:you@example.com" Mode="" Description="Contact email for the Web Push spec. Format: mailto:you@example.com" Type="Variable" Display="always" Required="true" Mask="false">mailto:you@example.com</Config>
+
+  <Config Name="CRON_SECRET" Target="CRON_SECRET" Default="" Mode="" Description="Bearer token the Unraid User Scripts plugin sends when hitting /api/cron/*. Any random string." Type="Variable" Display="always" Required="true" Mask="true"/>
+
+  <Config Name="APP_TIMEZONE" Target="APP_TIMEZONE" Default="America/New_York" Mode="" Description="IANA timezone for date math. e.g. America/New_York, Europe/London, Asia/Tokyo." Type="Variable" Display="always" Required="true" Mask="false">America/New_York</Config>
+
+  <Config Name="DATABASE_SSL" Target="DATABASE_SSL" Default="" Mode="" Description="Leave blank for local Docker Postgres. Set to 'require' for hosted Postgres with strict cert verification, or 'loose' to accept self-signed certs." Type="Variable" Display="advanced" Required="false" Mask="false"/>
+
+  <Config Name="NODE_ENV" Target="NODE_ENV" Default="production" Mode="" Description="Should stay as 'production'." Type="Variable" Display="advanced" Required="true" Mask="false">production</Config>
+</Container>

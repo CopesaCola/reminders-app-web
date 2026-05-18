@@ -1,0 +1,62 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: reminders-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-reminders}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}
+      POSTGRES_DB: ${POSTGRES_DB:-reminders}
+    volumes:
+      # On Unraid, mount appdata here. Override via .env if you want a different path.
+      - ${APPDATA_DIR:-/mnt/user/appdata/reminders}/postgres:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U ${POSTGRES_USER:-reminders} -d ${POSTGRES_DB:-reminders}']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    # No port published by default — only the app needs to reach it on the internal network.
+    networks:
+      - reminders
+
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: reminders-app:local
+    container_name: reminders-app
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgres://${POSTGRES_USER:-reminders}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-reminders}
+      APP_PASSWORD: ${APP_PASSWORD:?set APP_PASSWORD in .env}
+      SESSION_SECRET: ${SESSION_SECRET:?set SESSION_SECRET in .env}
+      VAPID_PUBLIC_KEY: ${VAPID_PUBLIC_KEY:?set VAPID_PUBLIC_KEY in .env}
+      VAPID_PRIVATE_KEY: ${VAPID_PRIVATE_KEY:?set VAPID_PRIVATE_KEY in .env}
+      VAPID_SUBJECT: ${VAPID_SUBJECT:-mailto:you@example.com}
+      CRON_SECRET: ${CRON_SECRET:?set CRON_SECRET in .env}
+      APP_TIMEZONE: ${APP_TIMEZONE:-America/New_York}
+    ports:
+      # Bind to localhost only — cloudflared (or your reverse proxy) talks to it over the internal network.
+      # Change to "3000:3000" if you want LAN access.
+      - '127.0.0.1:3000:3000'
+    networks:
+      - reminders
+
+  cloudflared:
+    image: cloudflare/cloudflared:latest
+    container_name: reminders-tunnel
+    restart: unless-stopped
+    # Run a named tunnel using the token from Cloudflare Zero Trust dashboard.
+    # See README "Cloudflare Tunnel setup" for how to get the token.
+    command: tunnel --no-autoupdate run --token ${CLOUDFLARE_TUNNEL_TOKEN}
+    depends_on:
+      - app
+    networks:
+      - reminders
+
+networks:
+  reminders:
+    name: reminders
