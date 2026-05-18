@@ -1,0 +1,35 @@
+<?xml version="1.0"?>
+<Container version="2">
+  <Name>reminders-cron</Name>
+  <Repository>mcuadros/ofelia:latest</Repository>
+  <Registry>https://hub.docker.com/r/mcuadros/ofelia</Registry>
+  <Network>reminders</Network>
+  <MyIP/>
+  <Shell>sh</Shell>
+  <Privileged>false</Privileged>
+  <Support>https://github.com/CopesaCola/reminders-app-web/issues</Support>
+  <Project>https://github.com/mcuadros/ofelia</Project>
+  <Overview>Ofelia cron sidecar. Reads schedule labels on the reminders-app container via the Docker socket and fires the goal-reminder and weekly-digest endpoints on cron. No config required if reminders-app is already running.</Overview>
+  <Category>Productivity: Tools: Other:</Category>
+  <WebUI/>
+  <TemplateURL/>
+  <Icon>https://raw.githubusercontent.com/mcuadros/ofelia/master/static/logo.png</Icon>
+  <ExtraParams>--restart=unless-stopped</ExtraParams>
+  <PostArgs>daemon --docker</PostArgs>
+  <CPUset/>
+  <DateInstalled/>
+  <DonateText/>
+  <DonateLink/>
+  <Requires>The reminders-app and reminders-postgres containers must be running first. This container reads schedule labels from reminders-app via the Docker socket, so it only needs to be installed once and left running.</Requires>
+  <Description>
+Cron sidecar for the Accountability app.
+
+Ofelia uses the Docker socket to read labels on the reminders-app container, then exec's curl inside that container to fire reminders every 15 minutes and the weekly digest every Sunday at 18:00 (in APP_TIMEZONE).
+
+**You usually don't need to change any settings here.** The schedules live on the reminders-app container's labels, not on this one. To change schedules, edit the labels on reminders-app and restart it.
+
+The Docker socket is mounted read-only — Ofelia only reads container metadata; it cannot start, stop, or modify containers.
+  </Description>
+  <Config Name="Docker socket" Target="/var/run/docker.sock" Default="/var/run/docker.sock" Mode="ro" Description="Read-only Docker socket. Required so Ofelia can find containers by label and exec into them." Type="Path" Display="advanced" Required="true" Mask="false">/var/run/docker.sock</Config>
+  <Config Name="TZ" Target="TZ" Default="America/New_York" Mode="" Description="Timezone for cron schedules. Match this to the reminders-app container's APP_TIMEZONE so '0 0 18 * * 0' means 18:00 in your local time." Type="Variable" Display="always" Required="true" Mask="false">America/New_York</Config>
+</Container>

@@ -7,8 +7,8 @@
   <MyIP/>
   <Shell>sh</Shell>
   <Privileged>false</Privileged>
-  <Support>https://github.com/YOU/reminders-app-web/issues</Support>
-  <Project>https://github.com/YOU/reminders-app-web</Project>
+  <Support>https://github.com/CopesaCola/reminders-app-web/issues</Support>
+  <Project>https://github.com/CopesaCola/reminders-app-web</Project>
   <Overview>Postgres 16 backing the Accountability goal tracker. Pairs with the reminders-app container.</Overview>
   <Category>Productivity: Tools: Other:</Category>
   <WebUI/>

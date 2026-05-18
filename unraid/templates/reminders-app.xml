@@ -1,50 +1,50 @@
 <?xml version="1.0"?>
 <Container version="2">
   <Name>reminders-app</Name>
-  <Repository>reminders-app:local</Repository>
-  <Registry/>
+  <Repository>ghcr.io/copesacola/reminders-app:latest</Repository>
+  <Registry>https://github.com/CopesaCola/reminders-app-web/pkgs/container/reminders-app</Registry>
   <Network>reminders</Network>
   <MyIP/>
   <Shell>sh</Shell>
   <Privileged>false</Privileged>
-  <Support>https://github.com/YOU/reminders-app-web/issues</Support>
-  <Project>https://github.com/YOU/reminders-app-web</Project>
-  <Overview>Single-user goal tracker with push reminders, calendar heatmap, streaks, and PWA install. Pairs with the reminders-postgres container.</Overview>
+  <Support>https://github.com/CopesaCola/reminders-app-web/issues</Support>
+  <Project>https://github.com/CopesaCola/reminders-app-web</Project>
+  <Overview>Single-user goal tracker with push reminders, calendar heatmap, streaks, and PWA install. Pairs with the reminders-postgres and reminders-cron containers.</Overview>
   <Category>Productivity: Tools: Other:</Category>
   <WebUI>http://[IP]:[PORT:3000]/</WebUI>
   <TemplateURL/>
-  <Icon>https://raw.githubusercontent.com/YOU/reminders-app-web/main/public/icons/icon.svg</Icon>
-  <ExtraParams>--restart=unless-stopped</ExtraParams>
+  <Icon>https://raw.githubusercontent.com/CopesaCola/reminders-app-web/main/public/icons/icon.svg</Icon>
+  <ExtraParams>--restart=unless-stopped --label 'ofelia.enabled=true' --label 'ofelia.job-exec.reminders.schedule=@every 15m' --label 'ofelia.job-exec.reminders.command=fire-cron reminders' --label 'ofelia.job-exec.weekly-digest.schedule=0 0 18 * * 0' --label 'ofelia.job-exec.weekly-digest.command=fire-cron weekly-digest'</ExtraParams>
   <PostArgs/>
   <CPUset/>
   <DateInstalled/>
   <DonateText/>
   <DonateLink/>
-  <Requires>1) The reminders Docker network must exist: `docker network create reminders`. 2) The image must be built locally first: `cd /mnt/user/appdata/reminders/app &amp;&amp; docker build -t reminders-app:local .` 3) The reminders-postgres container should be running before this one starts.</Requires>
+  <Requires>1) The "reminders" Docker network must exist (Unraid → Docker → add network "reminders" with the bridge driver). 2) The reminders-postgres container should be running. 3) Install reminders-cron after this one so cron picks up the labels.</Requires>
   <Description>
 Accountability app — personal goal tracker with push reminders.
 
+**Image source:** This template pulls `ghcr.io/copesacola/reminders-app:latest`, built and published by the GitHub Actions workflow in this repo on every push to `main`.
+
 **Before adding:**
 
-1. Clone the repo to appdata and build the image:
-
-       mkdir -p /mnt/user/appdata/reminders
-       cd /mnt/user/appdata/reminders
-       git clone https://github.com/YOU/reminders-app-web.git app
-       cd app
-       docker build -t reminders-app:local .
-
-2. Create the shared Docker network if you haven't: `docker network create reminders`
-3. Install the reminders-postgres template first.
+1. After the first GitHub Actions run, make the GHCR package public: GitHub profile → Packages → reminders-app → Package settings → Change visibility → Public. Otherwise Unraid can't pull the image.
+2. In Unraid → **Docker → Network → Add Network**: name "reminders", driver "bridge". Click Apply.
+3. Install the **reminders-postgres** template first.
+4. Install this template, fill in env vars, click Apply.
+5. Install the **reminders-cron** template last.
 
 **Required env vars** (see fields below):
 - DATABASE_URL — points at the postgres container by name
 - APP_PASSWORD — your login password
 - SESSION_SECRET — 32+ char random hex
-- VAPID_PUBLIC_KEY / VAPID_PRIVATE_KEY — generate with `npm run vapid:gen`
-- CRON_SECRET — bearer token for the User Scripts cron
+- VAPID_PUBLIC_KEY / VAPID_PRIVATE_KEY — for Web Push
+- CRON_SECRET — bearer token Ofelia uses when firing cron endpoints
+- APP_TIMEZONE — IANA timezone (e.g. America/New_York)
 
-**To update:** SSH in, `cd /mnt/user/appdata/reminders/app && git pull && docker build -t reminders-app:local .`, then click "Apply" or restart the container. Migrations run automatically on each start.
+**Cron schedules** are baked into this container's labels (see ExtraParams). Ofelia reads them and fires `fire-cron reminders` every 15 minutes and `fire-cron weekly-digest` every Sunday at 18:00 in your APP_TIMEZONE. To change a schedule, edit ExtraParams above and click Apply.
+
+**Updating:** Click "Force update" in the Unraid container actions to pull the latest image. Migrations run automatically on each start.
   </Description>
   <Config Name="WebUI Port" Target="3000" Default="3000" Mode="tcp" Description="HTTP port the app listens on. Point your reverse proxy / Cloudflare Tunnel at this." Type="Port" Display="always" Required="true" Mask="false">3000</Config>
 
@@ -54,13 +54,13 @@ Accountability app — personal goal tracker with push reminders.
 
   <Config Name="SESSION_SECRET" Target="SESSION_SECRET" Default="" Mode="" Description="32+ character random hex for cookie encryption. Generate with: docker run --rm node:20-alpine node -e &quot;console.log(require('crypto').randomBytes(32).toString('hex'))&quot;" Type="Variable" Display="always" Required="true" Mask="true"/>
 
-  <Config Name="VAPID_PUBLIC_KEY" Target="VAPID_PUBLIC_KEY" Default="" Mode="" Description="VAPID public key for Web Push. Generate with: docker run --rm -v $PWD:/work -w /work node:20-alpine sh -c 'npm install --no-save web-push &amp;&amp; node scripts/gen-vapid.mjs'" Type="Variable" Display="always" Required="true" Mask="false"/>
+  <Config Name="VAPID_PUBLIC_KEY" Target="VAPID_PUBLIC_KEY" Default="" Mode="" Description="VAPID public key for Web Push. Generate the pair with: docker run --rm node:20-alpine sh -c 'npm install -g web-push &amp;&amp; web-push generate-vapid-keys'" Type="Variable" Display="always" Required="true" Mask="false"/>
 
   <Config Name="VAPID_PRIVATE_KEY" Target="VAPID_PRIVATE_KEY" Default="" Mode="" Description="VAPID private key (paired with the public key above)." Type="Variable" Display="always" Required="true" Mask="true"/>
 
   <Config Name="VAPID_SUBJECT" Target="VAPID_SUBJECT" Default="mailto:you@example.com" Mode="" Description="Contact email for the Web Push spec. Format: mailto:you@example.com" Type="Variable" Display="always" Required="true" Mask="false">mailto:you@example.com</Config>
 
-  <Config Name="CRON_SECRET" Target="CRON_SECRET" Default="" Mode="" Description="Bearer token the Unraid User Scripts plugin sends when hitting /api/cron/*. Any random string." Type="Variable" Display="always" Required="true" Mask="true"/>
+  <Config Name="CRON_SECRET" Target="CRON_SECRET" Default="" Mode="" Description="Bearer token Ofelia sends when hitting /api/cron/*. Any random string." Type="Variable" Display="always" Required="true" Mask="true"/>
 
   <Config Name="APP_TIMEZONE" Target="APP_TIMEZONE" Default="America/New_York" Mode="" Description="IANA timezone for date math. e.g. America/New_York, Europe/London, Asia/Tokyo." Type="Variable" Display="always" Required="true" Mask="false">America/New_York</Config>
 

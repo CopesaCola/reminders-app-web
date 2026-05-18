@@ -51,6 +51,10 @@ COPY --from=builder --chown=nextjs:nodejs /app/drizzle ./drizzle
 COPY --from=builder --chown=nextjs:nodejs /app/scripts ./scripts
 COPY --from=migrator-deps --chown=nextjs:nodejs /app/node_modules ./scripts/node_modules
 
+# Cron-firing helper installed on PATH so Ofelia labels can call `fire-cron <endpoint>`
+COPY --chown=root:root scripts/fire-cron.sh /usr/local/bin/fire-cron
+RUN chmod +x /usr/local/bin/fire-cron
+
 # Entrypoint
 COPY --chown=nextjs:nodejs docker-entrypoint.sh /docker-entrypoint.sh
 RUN chmod +x /docker-entrypoint.sh

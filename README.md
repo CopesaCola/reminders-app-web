@@ -54,14 +54,29 @@ Visit http://localhost:3000, log in, create a goal, enable push from Settings.
 
 ## Deploy to Unraid (Docker + Cloudflare Tunnel)
 
-This is the production setup: Postgres + the app in Docker on Unraid, Cloudflare Tunnel for HTTPS, Unraid's User Scripts plugin for cron.
+This is the production setup: Postgres + the app in Docker on Unraid, Cloudflare Tunnel for HTTPS, Ofelia for cron.
 
-Two ways to run the containers — pick one:
+**Two ways to run the containers — pick one:**
 
-- **`docker compose`** (steps below) — everything in one file, single command to start/stop.
-- **Unraid Docker UI** — see [`unraid/templates/README.md`](unraid/templates/README.md) for installable XML templates that show up in Unraid's "Add Container → Template" dropdown.
+- **[Pure Docker tab path](unraid/templates/README.md) (recommended)** — install four Unraid templates from the Docker tab. GitHub Actions builds the image and publishes to GHCR; Unraid pulls from there. Zero command-line after the one-time fork + network creation.
+- **`docker compose` path (below)** — clone the repo to appdata and run `docker compose up -d`. Better if you'd rather have one config file you can edit.
 
 Both use the same image, same Postgres data dir, and the same env vars — switching later is just `docker compose down` and re-creating from the templates (or vice versa).
+
+---
+
+### Option A: Docker tab only
+
+See [`unraid/templates/README.md`](unraid/templates/README.md) for the full step-by-step. Summary:
+
+1. Fork this repo. The included GitHub Actions workflow auto-builds and publishes `ghcr.io/<your-username>/reminders-app:latest`. Make the package public.
+2. In Unraid → Docker → Network, add a bridge network named `reminders`.
+3. Install four templates from the Docker tab (postgres, app, ofelia, cloudflared).
+4. Done — open your Cloudflare hostname.
+
+---
+
+### Option B: docker compose
 
 ### 1. Clone to appdata
 
@@ -70,7 +85,7 @@ On the Unraid console (or via SSH):
 ```bash
 mkdir -p /mnt/user/appdata/reminders
 cd /mnt/user/appdata/reminders
-git clone https://github.com/YOU/reminders-app-web.git app
+git clone git@github.com:CopesaCola/reminders-app-web.git app
 cd app
 ```
 
@@ -116,21 +131,20 @@ The first start runs migrations (`drizzle/0000_init.sql`) against the Postgres c
 
 Visit your Cloudflare hostname. Log in with `APP_PASSWORD`. From your phone: "Add to Home Screen" first, then open the installed app and enable push from Settings.
 
-### 6. Set up cron (Unraid User Scripts plugin)
+### 6. Cron (already running)
 
-Install the **User Scripts** plugin from Community Apps if you don't have it. Then for each of the two scripts in `unraid/`:
+There's nothing to set up — `docker compose up -d` already started the **Ofelia** sidecar (`reminders-cron` container). It reads schedule labels on the app container via the Docker socket and fires:
 
-1. **Settings → User Scripts → Add New Script**, name it `reminders-app-reminders` (and later `reminders-app-digest`).
-2. Click **Edit Script**, paste the contents of `unraid/user-script-reminders.sh` (or `user-script-weekly-digest.sh`).
-3. Edit the two variables at the top:
-   - `APP_URL="http://192.168.x.x:3000"` — your Unraid LAN IP (the User Scripts container talks to the app over LAN, not the Cloudflare hostname).
-   - `CRON_SECRET="<paste the secret from your .env>"`
-4. Click **Schedule Disabled** → **Custom**, then enter:
-   - Reminders: `*/15 * * * *`
-   - Weekly digest: `0 18 * * 0`
-5. Save.
+- `/api/cron/reminders` every 15 minutes
+- `/api/cron/weekly-digest` Sunday at 18:00 (in `APP_TIMEZONE`)
 
-> **Note:** The User Scripts container reaches the app via LAN, so in `docker-compose.yml` change the `app.ports` line from `127.0.0.1:3000:3000` to `3000:3000` (LAN-bound) so User Scripts can hit it. Cloudflare Tunnel still works either way — it talks to the app over the internal Docker network.
+To change schedules, edit the `ofelia.job-exec.*.schedule` labels in `docker-compose.yml` and `docker compose up -d`. To disable a job temporarily, comment out its labels and re-up.
+
+Confirm it's working:
+
+```bash
+docker compose logs -f ofelia    # you'll see jobs registered, then "Job started" entries on schedule
+```
 
 ### 7. Verify
 
@@ -172,7 +186,7 @@ cat backup-2026-05-18.sql | docker exec -i reminders-db psql -U reminders -d rem
 
 - **Auth** — one password (`APP_PASSWORD`), checked in `src/app/api/auth/login/route.ts`. On success, an encrypted iron-session cookie is set. `src/middleware.ts` gates every page except `/login` and the cron endpoints (which use `CRON_SECRET`).
 - **Streaks** — `src/lib/cadence.ts` buckets entries by period (day/week/month) and counts consecutive periods where the goal hit its target. Paused goals don't break streaks.
-- **Reminders** — User Scripts hits `/api/cron/reminders` every 15 minutes. Each goal has `remindAtMinutes` (0–1439 in local time) and `remindDaysMask` (bit per weekday). If now falls within the 15-min window and the goal's not yet hit for its current period, it sends a push. Sent reminders are logged in `reminder_log` to prevent duplicates.
+- **Reminders** — the Ofelia sidecar container hits `/api/cron/reminders` every 15 minutes by exec-ing `curl` inside the app container. Each goal has `remindAtMinutes` (0–1439 in local time) and `remindDaysMask` (bit per weekday). If now falls within the 15-min window and the goal's not yet hit for its current period, it sends a push. Sent reminders are logged in `reminder_log` to prevent duplicates.
 - **Push** — `web-push` library with VAPID. The service worker (`public/sw.js`) shows the notification and handles the "Done" action by POSTing to `/api/entries`.
 - **24h edit lock** — entries created more than 24h ago can't be edited unless the entry is for today. Enforced in `/api/entries` POST.
 - **Migrations** — Drizzle generates SQL files into `drizzle/`. The container entrypoint (`docker-entrypoint.sh`) runs `scripts/migrate.mjs` on every start. Idempotent.
@@ -186,7 +200,7 @@ cat backup-2026-05-18.sql | docker exec -i reminders-db psql -U reminders -d rem
 
 ## Customizing
 
-- **Cron interval** — change the User Scripts schedule and update the `WINDOW` constant in `src/app/api/cron/reminders/route.ts` to match.
+- **Cron interval** — change the `ofelia.job-exec.reminders.schedule` label in `docker-compose.yml` and update the `WINDOW` constant in `src/app/api/cron/reminders/route.ts` to match.
 - **Timezone** — change `APP_TIMEZONE` in `.env` and `docker compose up -d`. All date math runs in this zone.
 - **Theme colors** — `src/app/globals.css` `:root` and `.dark` CSS variables.
 - **Schema changes** — edit `src/lib/schema.ts`, then locally run `npm run db:generate` to produce a new SQL file in `drizzle/`. Commit it. The next deploy applies it.
@@ -196,7 +210,7 @@ cat backup-2026-05-18.sql | docker exec -i reminders-db psql -U reminders -d rem
 - **`migrate` fails on first start** — check `docker compose logs postgres` for healthcheck failures. Confirm `POSTGRES_PASSWORD` matches between the two services (compose interpolates it from `.env`).
 - **Push doesn't fire** — Settings page shows your subscription status. If `permission: granted` but no notifications, run the curl test command above and check `docker compose logs app` for VAPID errors.
 - **Cloudflare 1033 / no DNS** — the tunnel's public hostname route in the CF dashboard must be saved before traffic flows. Run `docker compose logs cloudflared` and confirm "Registered tunnel connection".
-- **Cron not firing** — the User Scripts plugin shows the last run output. Confirm `APP_URL` resolves from inside the Unraid host (User Scripts run on the Unraid OS, not inside Docker).
+- **Cron not firing** — `docker compose logs ofelia` shows registered jobs and per-run output. If you see `cannot find container with label`, the app container probably restarted with a different name; `docker compose up -d ofelia` will pick it back up.
 
 ## Notes
 

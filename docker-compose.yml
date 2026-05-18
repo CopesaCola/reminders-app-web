@@ -42,6 +42,31 @@ services:
       # Bind to localhost only — cloudflared (or your reverse proxy) talks to it over the internal network.
       # Change to "3000:3000" if you want LAN access.
       - '127.0.0.1:3000:3000'
+    labels:
+      # Ofelia reads these labels via the Docker socket to schedule jobs.
+      # The `fire-cron` helper lives in the image and reads CRON_SECRET from the container env.
+      # Schedules use 6-field cron (with seconds): `s m h dom mon dow`.
+      ofelia.enabled: 'true'
+      ofelia.job-exec.reminders.schedule: '@every 15m'
+      ofelia.job-exec.reminders.command: 'fire-cron reminders'
+      ofelia.job-exec.weekly-digest.schedule: '0 0 18 * * 0'
+      ofelia.job-exec.weekly-digest.command: 'fire-cron weekly-digest'
+    networks:
+      - reminders
+
+  ofelia:
+    image: mcuadros/ofelia:latest
+    container_name: reminders-cron
+    restart: unless-stopped
+    depends_on:
+      - app
+    command: daemon --docker
+    environment:
+      # Match the app's timezone so `0 0 18 * * 0` means 18:00 in your local time.
+      TZ: ${APP_TIMEZONE:-America/New_York}
+    volumes:
+      # Read-only Docker socket — Ofelia uses it to read labels and exec into the app container.
+      - /var/run/docker.sock:/var/run/docker.sock:ro
     networks:
       - reminders
 
