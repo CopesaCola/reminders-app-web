@@ -207,6 +207,8 @@ cat backup-2026-05-18.sql | docker exec -i reminders-db psql -U reminders -d rem
 
 ## Troubleshooting
 
+- **Stuck on the login screen (form reloads, no error)** — you're accessing the app over HTTP (e.g. `http://<unraid-ip>:3152`) but `SECURE_COOKIES=true`. Browsers refuse Secure cookies on HTTP, so the session never sticks. Either leave `SECURE_COOKIES` unset (default), or set it to `true` only once you're using HTTPS via Cloudflare Tunnel.
+- **Red "Wrong password" on login** — the typed value doesn't match `APP_PASSWORD`. Common causes: stray quotes around the value in the Unraid template (don't quote it), or accidental newline at the end. The app trims whitespace on both sides; quotes are not stripped.
 - **`migrate` fails on first start** — check `docker compose logs postgres` for healthcheck failures. Confirm `POSTGRES_PASSWORD` matches between the two services (compose interpolates it from `.env`).
 - **Push doesn't fire** — Settings page shows your subscription status. If `permission: granted` but no notifications, run the curl test command above and check `docker compose logs app` for VAPID errors.
 - **Cloudflare 1033 / no DNS** — the tunnel's public hostname route in the CF dashboard must be saved before traffic flows. Run `docker compose logs cloudflared` and confirm "Registered tunnel connection".

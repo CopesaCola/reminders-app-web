@@ -66,5 +66,7 @@ Accountability app — personal goal tracker with push reminders.
 
   <Config Name="DATABASE_SSL" Target="DATABASE_SSL" Default="" Mode="" Description="Leave blank for local Docker Postgres. Set to 'require' for hosted Postgres with strict cert verification, or 'loose' to accept self-signed certs." Type="Variable" Display="advanced" Required="false" Mask="false"/>
 
+  <Config Name="SECURE_COOKIES" Target="SECURE_COOKIES" Default="" Mode="" Description="Set to 'true' ONLY when serving over HTTPS (e.g. via Cloudflare Tunnel). When true, the session cookie gets the Secure flag, which browsers refuse to set over plain HTTP. Leave blank if you're testing on LAN via the Unraid IP — otherwise you'll get stuck on the login screen." Type="Variable" Display="always" Required="false" Mask="false"/>
+
   <Config Name="NODE_ENV" Target="NODE_ENV" Default="production" Mode="" Description="Should stay as 'production'." Type="Variable" Display="advanced" Required="true" Mask="false">production</Config>
 </Container>

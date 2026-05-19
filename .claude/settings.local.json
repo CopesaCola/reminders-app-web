@@ -6,7 +6,8 @@
       "Bash(git commit -m ' *)",
       "Bash(gh auth *)",
       "Bash(gh api *)",
-      "Bash(bash -n unraid/setup.sh)"
+      "Bash(bash -n unraid/setup.sh)",
+      "Bash(git push *)"
     ]
   }
 }

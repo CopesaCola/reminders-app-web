@@ -38,6 +38,8 @@ services:
       VAPID_SUBJECT: ${VAPID_SUBJECT:-mailto:you@example.com}
       CRON_SECRET: ${CRON_SECRET:?set CRON_SECRET in .env}
       APP_TIMEZONE: ${APP_TIMEZONE:-America/New_York}
+      # Set to "true" only when serving over HTTPS. See README "login loop on HTTP".
+      SECURE_COOKIES: ${SECURE_COOKIES:-}
     ports:
       # Bind to localhost only — cloudflared (or your reverse proxy) talks to it over the internal network.
       # Change to "3152:3152" if you want LAN access.

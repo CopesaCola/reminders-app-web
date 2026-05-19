@@ -8,13 +8,18 @@ export type Session = {
 
 const password = process.env.SESSION_SECRET ?? '';
 
+// Browsers refuse to set cookies with the Secure flag on plain HTTP. Default to
+// off so LAN/HTTP testing works out of the box; flip SECURE_COOKIES=true once
+// you're serving over HTTPS (e.g. via Cloudflare Tunnel).
+const secureCookies = process.env.SECURE_COOKIES === 'true';
+
 export const sessionOptions: SessionOptions = {
   password,
   cookieName: 'reminders_session',
   cookieOptions: {
     httpOnly: true,
     sameSite: 'lax',
-    secure: process.env.NODE_ENV === 'production',
+    secure: secureCookies,
     path: '/',
     maxAge: 60 * 60 * 24 * 30, // 30 days
   },
@@ -37,12 +42,17 @@ export async function requireLogin(): Promise<void> {
 }
 
 export function checkPassword(input: string): boolean {
-  const expected = process.env.APP_PASSWORD ?? '';
-  if (!expected) return false;
-  if (input.length !== expected.length) return false;
+  // Trim both sides — handles stray whitespace from copy-paste into env vars.
+  const expected = (process.env.APP_PASSWORD ?? '').trim();
+  const candidate = (input ?? '').trim();
+  if (!expected) {
+    console.warn('[auth] APP_PASSWORD is not set — every login attempt will fail');
+    return false;
+  }
+  if (candidate.length !== expected.length) return false;
   let mismatch = 0;
   for (let i = 0; i < expected.length; i++) {
-    mismatch |= expected.charCodeAt(i) ^ input.charCodeAt(i);
+    mismatch |= expected.charCodeAt(i) ^ candidate.charCodeAt(i);
   }
   return mismatch === 0;
 }
