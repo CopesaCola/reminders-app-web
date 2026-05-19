@@ -71,7 +71,7 @@ In Unraid → **Docker → Add Container → Template** dropdown:
   Paste public and private separately.
 - **CRON_SECRET:** any random string.
 - **APP_TIMEZONE:** IANA timezone, e.g. `America/New_York`.
-- Click **Apply**. Watch logs — first start runs migrations, then serves on `:3000`.
+- Click **Apply**. Watch logs — first start runs migrations, then serves on `:3152`.
 
 **c) reminders-cron**
 - Set `TZ` to match the app's `APP_TIMEZONE`.
@@ -81,7 +81,7 @@ In Unraid → **Docker → Add Container → Template** dropdown:
 **d) cloudflared** (separately, from Community Apps)
 - Install the official `cloudflared` template.
 - Paste your Cloudflare Tunnel connector token (from Cloudflare Zero Trust → Networks → Tunnels).
-- In the Cloudflare dashboard, add a public hostname route: `HTTP` → `reminders-app:3000`.
+- In the Cloudflare dashboard, add a public hostname route: `HTTP` → `reminders-app:3152`.
 
 ### 4. Verify
 

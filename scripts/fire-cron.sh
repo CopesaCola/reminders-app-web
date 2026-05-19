@@ -18,4 +18,4 @@ fi
 
 exec curl -fsS -X POST \
   -H "Authorization: Bearer ${CRON_SECRET}" \
-  "http://localhost:${PORT:-3000}/api/cron/$1"
+  "http://localhost:${PORT:-3152}/api/cron/$1"

@@ -11,7 +11,7 @@
   <Project>https://github.com/CopesaCola/reminders-app-web</Project>
   <Overview>Single-user goal tracker with push reminders, calendar heatmap, streaks, and PWA install. Pairs with the reminders-postgres and reminders-cron containers.</Overview>
   <Category>Productivity: Tools: Other:</Category>
-  <WebUI>http://[IP]:[PORT:3000]/</WebUI>
+  <WebUI>http://[IP]:[PORT:3152]/</WebUI>
   <TemplateURL/>
   <Icon>https://raw.githubusercontent.com/CopesaCola/reminders-app-web/main/public/icons/icon.svg</Icon>
   <ExtraParams>--restart=unless-stopped --label 'ofelia.enabled=true' --label 'ofelia.job-exec.reminders.schedule=@every 15m' --label 'ofelia.job-exec.reminders.command=fire-cron reminders' --label 'ofelia.job-exec.weekly-digest.schedule=0 0 18 * * 0' --label 'ofelia.job-exec.weekly-digest.command=fire-cron weekly-digest'</ExtraParams>
@@ -46,7 +46,7 @@ Accountability app — personal goal tracker with push reminders.
 
 **Updating:** Click "Force update" in the Unraid container actions to pull the latest image. Migrations run automatically on each start.
   </Description>
-  <Config Name="WebUI Port" Target="3000" Default="3000" Mode="tcp" Description="HTTP port the app listens on. Point your reverse proxy / Cloudflare Tunnel at this." Type="Port" Display="always" Required="true" Mask="false">3000</Config>
+  <Config Name="WebUI Port" Target="3152" Default="3152" Mode="tcp" Description="HTTP port the app listens on. Point your reverse proxy / Cloudflare Tunnel at this." Type="Port" Display="always" Required="true" Mask="false">3152</Config>
 
   <Config Name="DATABASE_URL" Target="DATABASE_URL" Default="postgres://reminders:CHANGEME@reminders-postgres:5432/reminders" Mode="" Description="Postgres connection string. Host is the postgres container name (reminders-postgres). User/password/db must match the postgres container's env vars." Type="Variable" Display="always" Required="true" Mask="true">postgres://reminders:CHANGEME@reminders-postgres:5432/reminders</Config>
 

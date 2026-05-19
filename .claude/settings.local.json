@@ -2,7 +2,11 @@
   "permissions": {
     "allow": [
       "PowerShell(npm install --no-audit --no-fund 2>&1)",
-      "Bash(git add *)"
+      "Bash(git add *)",
+      "Bash(git commit -m ' *)",
+      "Bash(gh auth *)",
+      "Bash(gh api *)",
+      "Bash(bash -n unraid/setup.sh)"
     ]
   }
 }

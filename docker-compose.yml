@@ -40,8 +40,8 @@ services:
       APP_TIMEZONE: ${APP_TIMEZONE:-America/New_York}
     ports:
       # Bind to localhost only — cloudflared (or your reverse proxy) talks to it over the internal network.
-      # Change to "3000:3000" if you want LAN access.
-      - '127.0.0.1:3000:3000'
+      # Change to "3152:3152" if you want LAN access.
+      - '127.0.0.1:3152:3152'
     labels:
       # Ofelia reads these labels via the Docker socket to schedule jobs.
       # The `fire-cron` helper lives in the image and reads CRON_SECRET from the container env.

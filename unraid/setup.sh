@@ -149,7 +149,7 @@ ${bold}2.${reset} In Unraid → Docker → Add Container:
 
 ${bold}3.${reset} Install ${dim}cloudflared${reset} separately from Community Apps for HTTPS.
    In Cloudflare Zero Trust dashboard, route your public hostname to
-   ${dim}HTTP → reminders-app:3000${reset}.
+   ${dim}HTTP → reminders-app:3152${reset}.
 
 ${bold}Secrets file:${reset}
    ${dim}cat $SECRETS_FILE${reset}

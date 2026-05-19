@@ -34,7 +34,7 @@ WORKDIR /app
 
 ENV NODE_ENV=production
 ENV NEXT_TELEMETRY_DISABLED=1
-ENV PORT=3000
+ENV PORT=3152
 ENV HOSTNAME=0.0.0.0
 
 RUN apk add --no-cache curl tini \
@@ -60,10 +60,10 @@ COPY --chown=nextjs:nodejs docker-entrypoint.sh /docker-entrypoint.sh
 RUN chmod +x /docker-entrypoint.sh
 
 USER nextjs
-EXPOSE 3000
+EXPOSE 3152
 
 HEALTHCHECK --interval=30s --timeout=5s --start-period=20s --retries=3 \
-  CMD curl -fsS http://localhost:3000/login || exit 1
+  CMD curl -fsS http://localhost:3152/login || exit 1
 
 ENTRYPOINT ["/sbin/tini", "--", "/docker-entrypoint.sh"]
 CMD ["node", "server.js"]

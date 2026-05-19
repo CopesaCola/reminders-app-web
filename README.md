@@ -48,7 +48,7 @@ CRON_SECRET=...                # any random string
 APP_TIMEZONE=America/New_York
 ```
 
-Visit http://localhost:3000, log in, create a goal, enable push from Settings.
+Visit http://localhost:3152, log in, create a goal, enable push from Settings.
 
 ---
 
@@ -116,7 +116,7 @@ nano .env       # paste the values you just generated
 3. Paste it into `.env` as `CLOUDFLARE_TUNNEL_TOKEN=...`.
 4. Still in the Cloudflare dashboard, under your tunnel's **Public Hostname** tab, add a route:
    - Subdomain + domain you control (e.g. `goals.example.com`)
-   - **Service:** `HTTP` → `app:3000`
+   - **Service:** `HTTP` → `app:3152`
    - That hostname is now your app URL. Cloudflare handles TLS automatically.
 
 ### 5. Build and start
@@ -150,7 +150,7 @@ docker compose logs -f ofelia    # you'll see jobs registered, then "Job started
 
 ```bash
 # Trigger a reminder immediately
-curl -X POST -H "Authorization: Bearer $CRON_SECRET" http://localhost:3000/api/cron/reminders
+curl -X POST -H "Authorization: Bearer $CRON_SECRET" http://localhost:3152/api/cron/reminders
 
 # Or click "Send test" in the app's Settings page
 ```
