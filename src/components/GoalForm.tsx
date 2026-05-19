@@ -6,16 +6,75 @@ import type { Goal } from '@/lib/schema';
 
 const dayLabels = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
+type GoalType = 'binary' | 'quantitative' | 'milestone';
+type Cadence = 'daily' | 'weekly' | 'monthly';
+
+type ExampleGoal = {
+  title: string;
+  why?: string;
+  cadence: Cadence;
+  targetValue?: number;
+  targetUnit?: string;
+};
+
+const TYPE_INFO: Record<GoalType, { blurb: string; goodFor: string; examples: ExampleGoal[] }> = {
+  binary: {
+    blurb:
+      "Yes-or-no per period. One tap on the dashboard counts a check-in. The streak grows each period you do it.",
+    goodFor:
+      'Habits where any positive count is a win — and "didn\'t do it" should clearly break the streak.',
+    examples: [
+      { title: 'Meditate', cadence: 'daily', why: 'Calmer days, sharper focus.' },
+      { title: 'Take vitamins', cadence: 'daily' },
+      {
+        title: 'Call a family member',
+        cadence: 'weekly',
+        why: 'Stay close even when life is busy.',
+      },
+    ],
+  },
+  quantitative: {
+    blurb:
+      'Sum a number across each period; the period counts as "hit" when the total reaches your target. Log multiple entries per period — they add up.',
+    goodFor: 'Volume goals where you accumulate progress and want to hit a number.',
+    examples: [
+      { title: 'Run 20 miles per week', cadence: 'weekly', targetValue: 20, targetUnit: 'miles' },
+      {
+        title: 'Read 30 minutes per day',
+        cadence: 'daily',
+        targetValue: 30,
+        targetUnit: 'minutes',
+      },
+      {
+        title: 'Write 500 words per day',
+        cadence: 'daily',
+        targetValue: 500,
+        targetUnit: 'words',
+      },
+    ],
+  },
+  milestone: {
+    blurb:
+      "A long-running project with no per-period number. You log when you worked on it; streaks track consistency, not output.",
+    goodFor: 'Multi-month projects where any forward motion counts.',
+    examples: [
+      {
+        title: 'Finish writing a novel',
+        cadence: 'daily',
+        why: 'A page a day adds up to a book in two years.',
+      },
+      { title: 'Learn Spanish to B2', cadence: 'daily' },
+      { title: 'Renovate the kitchen', cadence: 'weekly' },
+    ],
+  },
+};
+
 export function GoalForm({ goal }: { goal?: Goal }) {
   const router = useRouter();
   const [title, setTitle] = useState(goal?.title ?? '');
   const [why, setWhy] = useState(goal?.why ?? '');
-  const [type, setType] = useState<'binary' | 'quantitative' | 'milestone'>(
-    (goal?.type as any) ?? 'binary'
-  );
-  const [cadence, setCadence] = useState<'daily' | 'weekly' | 'monthly'>(
-    (goal?.cadence as any) ?? 'daily'
-  );
+  const [type, setType] = useState<GoalType>((goal?.type as GoalType) ?? 'binary');
+  const [cadence, setCadence] = useState<Cadence>((goal?.cadence as Cadence) ?? 'daily');
   const [targetValue, setTargetValue] = useState<number | ''>(goal?.targetValue ?? '');
   const [targetUnit, setTargetUnit] = useState(goal?.targetUnit ?? '');
   const [time, setTime] = useState(
@@ -29,6 +88,14 @@ export function GoalForm({ goal }: { goal?: Goal }) {
   const [pausedUntil, setPausedUntil] = useState(goal?.pausedUntil ?? '');
   const [busy, setBusy] = useState(false);
 
+  function applyExample(ex: ExampleGoal) {
+    setTitle(ex.title);
+    if (ex.why) setWhy(ex.why);
+    setCadence(ex.cadence);
+    setTargetValue(ex.targetValue ?? '');
+    setTargetUnit(ex.targetUnit ?? '');
+  }
+
   async function submit(e: React.FormEvent) {
     e.preventDefault();
     setBusy(true);
@@ -37,7 +104,8 @@ export function GoalForm({ goal }: { goal?: Goal }) {
       title,
       why: why || null,
       cadence,
-      targetValue: type === 'quantitative' ? (targetValue === '' ? null : Number(targetValue)) : null,
+      targetValue:
+        type === 'quantitative' ? (targetValue === '' ? null : Number(targetValue)) : null,
       targetUnit: type === 'quantitative' ? targetUnit || null : null,
       remindAtMinutes: hh * 60 + mm,
       remindDaysMask: daysMask,
@@ -82,6 +150,8 @@ export function GoalForm({ goal }: { goal?: Goal }) {
     router.refresh();
   }
 
+  const info = TYPE_INFO[type];
+
   return (
     <form onSubmit={submit} className="space-y-4">
       <div>
@@ -119,11 +189,35 @@ export function GoalForm({ goal }: { goal?: Goal }) {
               </button>
             ))}
           </div>
-          <p className="text-xs text-muted mt-1">
-            {type === 'binary' && 'Did it / didn\'t.'}
-            {type === 'quantitative' && 'Sum a value across the period (e.g. miles, pages).'}
-            {type === 'milestone' && 'Long project — log when you worked on it.'}
-          </p>
+
+          <div className="mt-3 rounded-lg border border-border bg-muted/5 p-3 space-y-3">
+            <p className="text-sm">{info.blurb}</p>
+            <p className="text-xs text-muted">
+              <span className="font-medium text-fg">Good for:</span> {info.goodFor}
+            </p>
+            <div>
+              <p className="text-xs text-muted mb-1.5">
+                Tap an example to fill in the form below:
+              </p>
+              <div className="flex flex-wrap gap-1.5">
+                {info.examples.map((ex) => (
+                  <button
+                    type="button"
+                    key={ex.title}
+                    onClick={() => applyExample(ex)}
+                    title={
+                      ex.targetValue
+                        ? `${ex.cadence} · target ${ex.targetValue} ${ex.targetUnit ?? ''}`
+                        : ex.cadence
+                    }
+                    className="px-2.5 py-1 rounded-md border border-border hover:border-accent hover:text-accent text-xs transition-colors"
+                  >
+                    {ex.title}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
         </div>
       )}
 
@@ -146,13 +240,17 @@ export function GoalForm({ goal }: { goal?: Goal }) {
       {type === 'quantitative' && (
         <div className="grid grid-cols-2 gap-3">
           <div>
-            <label className="label">Target per {cadence === 'daily' ? 'day' : cadence === 'weekly' ? 'week' : 'month'}</label>
+            <label className="label">
+              Target per {cadence === 'daily' ? 'day' : cadence === 'weekly' ? 'week' : 'month'}
+            </label>
             <input
               type="number"
               step="any"
               className="input mt-1"
               value={targetValue}
-              onChange={(e) => setTargetValue(e.target.value === '' ? '' : Number(e.target.value))}
+              onChange={(e) =>
+                setTargetValue(e.target.value === '' ? '' : Number(e.target.value))
+              }
             />
           </div>
           <div>
