@@ -1,6 +1,6 @@
 {
-  "name": "Accountability",
-  "short_name": "Accountability",
+  "name": "Goal Tracking",
+  "short_name": "Goals",
   "description": "Personal goal tracker with push reminders",
   "start_url": "/",
   "display": "standalone",

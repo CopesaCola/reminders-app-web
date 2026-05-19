@@ -1,5 +1,5 @@
 #!/bin/bash
-# Accountability app — Unraid setup helper.
+# Goal Tracking app — Unraid setup helper.
 #
 # Run this on your Unraid box once. It:
 #   1. Creates the "reminders" Docker network (if missing)
@@ -47,7 +47,7 @@ if ! command -v docker >/dev/null 2>&1; then
   exit 1
 fi
 
-echo "${bold}=== Accountability app — Unraid setup ===${reset}"
+echo "${bold}=== Goal Tracking app — Unraid setup ===${reset}"
 echo ""
 
 # --- 1. Network ---

@@ -1,4 +1,4 @@
-# Accountability
+# Goal Tracking
 
 A single-user, web-based goal tracker with push notification reminders. Installs as a PWA on desktop and mobile.
 

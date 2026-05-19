@@ -15,7 +15,7 @@ export function Nav() {
     <nav className="sticky top-0 z-40 bg-bg/80 backdrop-blur border-b border-border">
       <div className="max-w-3xl mx-auto px-4 h-14 flex items-center justify-between">
         <Link href="/" className="font-semibold tracking-tight">
-          Accountability
+          Goal Tracking
         </Link>
         <div className="flex gap-1">
           {items.map((it) => {

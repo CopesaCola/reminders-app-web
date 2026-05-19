@@ -22,7 +22,7 @@
   <DonateLink/>
   <Requires>The reminders-app and reminders-postgres containers must be running first. This container reads schedule labels from reminders-app via the Docker socket, so it only needs to be installed once and left running.</Requires>
   <Description>
-Cron sidecar for the Accountability app.
+Cron sidecar for the Goal Tracking app.
 
 Ofelia uses the Docker socket to read labels on the reminders-app container, then exec's curl inside that container to fire reminders every 15 minutes and the weekly digest every Sunday at 18:00 (in APP_TIMEZONE).
 

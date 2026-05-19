@@ -18,7 +18,7 @@ export async function GET(req: Request) {
     return new NextResponse(rows.join('\n'), {
       headers: {
         'content-type': 'text/csv',
-        'content-disposition': `attachment; filename="accountability-export-${new Date().toISOString().slice(0, 10)}.csv"`,
+        'content-disposition': `attachment; filename="goal-tracking-export-${new Date().toISOString().slice(0, 10)}.csv"`,
       },
     });
   }
@@ -27,7 +27,7 @@ export async function GET(req: Request) {
   return new NextResponse(body, {
     headers: {
       'content-type': 'application/json',
-      'content-disposition': `attachment; filename="accountability-export-${new Date().toISOString().slice(0, 10)}.json"`,
+      'content-disposition': `attachment; filename="goal-tracking-export-${new Date().toISOString().slice(0, 10)}.json"`,
     },
   });
 }

@@ -28,7 +28,7 @@ function LoginInner() {
   return (
     <main className="min-h-screen grid place-items-center px-4">
       <form onSubmit={submit} className="card p-6 w-full max-w-sm space-y-4">
-        <h1 className="text-xl font-semibold">Accountability</h1>
+        <h1 className="text-xl font-semibold">Goal Tracking</h1>
         <p className="text-sm text-muted">Enter your password to continue.</p>
         <input
           autoFocus

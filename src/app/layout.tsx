@@ -3,10 +3,10 @@ import type { Metadata, Viewport } from 'next';
 import { GlobalChrome } from '@/components/GlobalChrome';
 
 export const metadata: Metadata = {
-  title: 'Accountability',
+  title: 'Goal Tracking',
   description: 'Personal goal tracker with push reminders',
   manifest: '/manifest.json',
-  appleWebApp: { capable: true, statusBarStyle: 'default', title: 'Accountability' },
+  appleWebApp: { capable: true, statusBarStyle: 'default', title: 'Goal Tracking' },
 };
 
 export const viewport: Viewport = {

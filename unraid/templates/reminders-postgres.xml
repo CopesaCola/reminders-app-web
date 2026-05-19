@@ -9,7 +9,7 @@
   <Privileged>false</Privileged>
   <Support>https://github.com/CopesaCola/reminders-app-web/issues</Support>
   <Project>https://github.com/CopesaCola/reminders-app-web</Project>
-  <Overview>Postgres 16 backing the Accountability goal tracker. Pairs with the reminders-app container.</Overview>
+  <Overview>Postgres 16 backing the Goal Tracking app. Pairs with the reminders-app container.</Overview>
   <Category>Productivity: Tools: Other:</Category>
   <WebUI/>
   <TemplateURL/>
@@ -22,7 +22,7 @@
   <DonateLink/>
   <Requires>Create a custom Docker network named "reminders" first: open a console and run `docker network create reminders`. Both this container and reminders-app must join it so they can reach each other by container name.</Requires>
   <Description>
-Postgres 16 dedicated to the Accountability app.
+Postgres 16 dedicated to the Goal Tracking app.
 
 Before adding: create the shared Docker network the app and DB use to talk to each other. From the Unraid terminal:
 

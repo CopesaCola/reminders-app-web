@@ -22,7 +22,7 @@
   <DonateLink/>
   <Requires>1) The "reminders" Docker network must exist (Unraid → Docker → add network "reminders" with the bridge driver). 2) The reminders-postgres container should be running. 3) Install reminders-cron after this one so cron picks up the labels.</Requires>
   <Description>
-Accountability app — personal goal tracker with push reminders.
+Goal Tracking — personal goal tracker with push reminders.
 
 **Image source:** This template pulls `ghcr.io/copesacola/reminders-app:latest`, built and published by the GitHub Actions workflow in this repo on every push to `main`.
 
