@@ -1,6 +1,13 @@
 import './globals.css';
 import type { Metadata, Viewport } from 'next';
+import { Inter } from 'next/font/google';
 import { GlobalChrome } from '@/components/GlobalChrome';
+
+const inter = Inter({
+  subsets: ['latin'],
+  display: 'swap',
+  variable: '--font-inter',
+});
 
 export const metadata: Metadata = {
   title: 'Goal Tracking',
@@ -12,7 +19,7 @@ export const metadata: Metadata = {
 export const viewport: Viewport = {
   themeColor: [
     { media: '(prefers-color-scheme: light)', color: '#fafaf9' },
-    { media: '(prefers-color-scheme: dark)', color: '#0c0a09' },
+    { media: '(prefers-color-scheme: dark)', color: '#0c0c0e' },
   ],
   width: 'device-width',
   initialScale: 1,
@@ -22,7 +29,7 @@ export const viewport: Viewport = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" suppressHydrationWarning>
+    <html lang="en" className={inter.variable} suppressHydrationWarning>
       <head>
         <script
           dangerouslySetInnerHTML={{

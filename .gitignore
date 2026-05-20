@@ -6,3 +6,6 @@ node_modules
 .DS_Store
 .vercel
 next-env.d.ts
+
+# Locally materialized plugin/skill files — not part of the app
+.claude/skills/

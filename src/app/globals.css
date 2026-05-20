@@ -2,35 +2,75 @@
 @tailwind components;
 @tailwind utilities;
 
+/* ---- Design tokens ----------------------------------------------------- */
+/* Calm focused-minimal system. Emerald accent. RGB triplets so Tailwind can
+   apply alpha via rgb(var(--token) / <alpha>). Contrast pairs verified for AA. */
+
 :root {
-  --bg: 250 250 249;
-  --fg: 28 25 23;
-  --muted: 120 113 108;
+  --bg: 250 250 249; /* stone-50 */
+  --fg: 28 25 23; /* stone-900 */
+  --muted: 120 113 108; /* stone-500  (4.6:1 on bg) */
+  --muted-2: 168 162 158; /* stone-400  (decorative only) */
   --card: 255 255 255;
-  --border: 231 229 228;
-  --accent: 14 165 233;
-  --ok: 34 197 94;
-  --warn: 234 179 8;
-  --bad: 239 68 68;
+  --card-2: 250 250 249; /* inset surfaces */
+  --border: 231 229 228; /* stone-200 */
+
+  --accent: 4 120 87; /* emerald-700  (4.8:1 on white — text/icon/links) */
+  --accent-solid: 4 120 87; /* button fill (white text = 4.8:1) */
+  --accent-fg: 255 255 255; /* text on accent-solid */
+  --accent-soft: 209 250 229; /* emerald-100 chip backgrounds */
+  --ring: 16 185 129; /* emerald-500 focus ring */
+
+  --ok: 4 120 87; /* emerald-700 */
+  --warn: 180 83 9; /* amber-700  (4.5:1 on white) */
+  --bad: 185 28 28; /* red-700    (5.9:1 on white) */
+
+  --shadow-card: 0 1px 2px rgb(0 0 0 / 0.04), 0 1px 3px rgb(0 0 0 / 0.06);
+  --shadow-pop: 0 4px 12px rgb(0 0 0 / 0.08), 0 2px 4px rgb(0 0 0 / 0.05);
 }
 
 .dark {
-  --bg: 12 10 9;
-  --fg: 250 250 249;
-  --muted: 168 162 158;
-  --card: 24 24 27;
-  --border: 39 39 42;
-  --accent: 56 189 248;
-  --ok: 74 222 128;
-  --warn: 250 204 21;
-  --bad: 248 113 113;
+  --bg: 12 12 14;
+  --fg: 244 244 245; /* zinc-100 */
+  --muted: 161 161 170; /* zinc-400  (5.9:1 on bg) */
+  --muted-2: 113 113 122; /* zinc-500 */
+  --card: 24 24 27; /* zinc-900 */
+  --card-2: 32 32 36;
+  --border: 39 39 42; /* zinc-800 */
+
+  --accent: 52 211 153; /* emerald-400  (8.9:1 on bg — text/icon/links) */
+  --accent-solid: 16 185 129; /* emerald-500 fill */
+  --accent-fg: 4 47 35; /* deep emerald text on solid (high contrast) */
+  --accent-soft: 6 78 59; /* emerald-900 chip backgrounds */
+  --ring: 16 185 129;
+
+  --ok: 52 211 153;
+  --warn: 251 191 36; /* amber-400 */
+  --bad: 248 113 113; /* red-400 */
+
+  --shadow-card: 0 1px 2px rgb(0 0 0 / 0.3);
+  --shadow-pop: 0 8px 24px rgb(0 0 0 / 0.45);
 }
+
+/* ---- Base -------------------------------------------------------------- */
 
 html,
 body {
   background-color: rgb(var(--bg));
   color: rgb(var(--fg));
   -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+::selection {
+  background-color: rgb(var(--accent) / 0.18);
+}
+
+/* Single global focus style — visible, on-brand, never removed. */
+*:focus-visible {
+  outline: 2px solid rgb(var(--ring));
+  outline-offset: 2px;
+  border-radius: 6px;
 }
 
 button,
@@ -42,29 +82,93 @@ select {
 }
 
 input[type='checkbox'] {
-  accent-color: rgb(var(--accent));
+  accent-color: rgb(var(--accent-solid));
 }
 
-.card {
-  @apply bg-card border border-border rounded-xl;
+/* Tabular figures for any number we want to stay aligned. */
+.tnum {
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: 'tnum';
 }
 
-.btn {
-  @apply inline-flex items-center justify-center gap-2 rounded-lg px-3 py-2 text-sm font-medium border border-border hover:bg-muted/10 transition-colors;
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
 }
 
-.btn-primary {
-  @apply btn bg-accent text-white border-transparent hover:opacity-90;
-}
+/* ---- Components -------------------------------------------------------- */
 
-.btn-danger {
-  @apply btn bg-bad text-white border-transparent hover:opacity-90;
-}
+@layer components {
+  .card {
+    @apply bg-card border border-border rounded-2xl;
+    box-shadow: var(--shadow-card);
+  }
 
-.input {
-  @apply w-full rounded-lg border border-border bg-card px-3 py-2 outline-none focus:border-accent;
-}
+  /* Base button: 44px min height for touch, smooth press, clear states. */
+  .btn {
+    @apply inline-flex items-center justify-center gap-2 rounded-xl px-4 min-h-[44px]
+      text-sm font-medium border border-border bg-card
+      transition-[background-color,border-color,transform,opacity] duration-150
+      hover:bg-card-2 active:scale-[0.98]
+      disabled:opacity-50 disabled:pointer-events-none cursor-pointer;
+  }
 
-.label {
-  @apply text-sm font-medium text-muted;
+  .btn-primary {
+    @apply btn border-transparent font-semibold;
+    background-color: rgb(var(--accent-solid));
+    color: rgb(var(--accent-fg));
+  }
+  .btn-primary:hover {
+    background-color: rgb(var(--accent-solid));
+    opacity: 0.92;
+  }
+
+  .btn-ghost {
+    @apply btn border-transparent bg-transparent hover:bg-card-2;
+  }
+
+  .btn-danger {
+    @apply btn border-transparent text-white;
+    background-color: rgb(var(--bad));
+  }
+  .btn-danger:hover {
+    opacity: 0.92;
+  }
+
+  /* Icon-only square button — keeps the 44px touch target. */
+  .btn-icon {
+    @apply inline-flex items-center justify-center rounded-xl w-11 h-11
+      border border-border bg-card hover:bg-card-2 transition-colors
+      active:scale-[0.96] cursor-pointer;
+  }
+
+  .input {
+    @apply w-full rounded-xl border border-border bg-card px-3.5 min-h-[44px]
+      outline-none transition-colors placeholder:text-muted-2;
+  }
+  .input:focus {
+    border-color: rgb(var(--accent));
+  }
+
+  .label {
+    @apply text-sm font-medium text-fg;
+  }
+
+  .chip {
+    @apply inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-medium;
+  }
+  .chip-accent {
+    @apply chip;
+    background-color: rgb(var(--accent-soft));
+    color: rgb(var(--accent));
+  }
+  .chip-muted {
+    @apply chip bg-card-2 text-muted border border-border;
+  }
 }

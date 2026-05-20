@@ -2,7 +2,39 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { Check, Plus } from 'lucide-react';
 import type { Goal, Entry } from '@/lib/schema';
+
+/** Round check toggle used for binary goals, milestones, and todos. */
+function CheckToggle({
+  done,
+  onToggle,
+  disabled,
+  labelDone,
+  labelOpen,
+}: {
+  done: boolean;
+  onToggle: () => void;
+  disabled?: boolean;
+  labelDone: string;
+  labelOpen: string;
+}) {
+  return (
+    <button
+      onClick={onToggle}
+      disabled={disabled}
+      aria-pressed={done}
+      aria-label={done ? labelDone : labelOpen}
+      className={`group inline-flex items-center justify-center w-11 h-11 rounded-full border-2 transition-all active:scale-90 disabled:opacity-50 ${
+        done
+          ? 'bg-accent-solid border-transparent text-accent-fg'
+          : 'border-border text-transparent hover:border-accent hover:text-accent'
+      }`}
+    >
+      <Check size={20} strokeWidth={3} className={done ? '' : 'opacity-0 group-hover:opacity-60'} />
+    </button>
+  );
+}
 
 export function CheckInForm({
   goal,
@@ -14,9 +46,7 @@ export function CheckInForm({
   compact?: boolean;
 }) {
   const router = useRouter();
-  const [value, setValue] = useState<number>(
-    todayEntry?.value ?? (goal.type === 'binary' ? 0 : 0)
-  );
+  const [value, setValue] = useState<number>(todayEntry?.value ?? 0);
   const [note, setNote] = useState<string>(todayEntry?.note ?? '');
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
@@ -45,8 +75,12 @@ export function CheckInForm({
   if (goal.type === 'todo') {
     const done = goal.completedAt != null;
     return (
-      <button
-        onClick={async () => {
+      <CheckToggle
+        done={done}
+        disabled={saving}
+        labelDone="Mark not done"
+        labelOpen="Mark done"
+        onToggle={async () => {
           setSaving(true);
           const res = await fetch(`/api/goals/${goal.id}`, {
             method: 'PATCH',
@@ -56,83 +90,71 @@ export function CheckInForm({
           setSaving(false);
           if (res.ok) router.refresh();
         }}
-        className={done ? 'btn-primary' : 'btn'}
-        disabled={saving}
-      >
-        {done ? '✓ Done' : 'Mark done'}
-      </button>
+      />
     );
   }
 
-  if (goal.type === 'binary') {
+  if (goal.type === 'binary' || goal.type === 'milestone') {
     const done = (todayEntry?.value ?? value) > 0;
-    return (
-      <div className={`flex items-center gap-2 ${compact ? '' : 'flex-col items-stretch'}`}>
-        <button
-          onClick={() => {
-            const next = done ? 0 : 1;
-            setValue(next);
-            save(next);
-          }}
-          className={done ? 'btn-primary' : 'btn'}
-          disabled={saving}
-        >
-          {done ? '✓ Done today' : 'Mark done'}
-        </button>
-        {!compact && (
-          <input
-            className="input"
-            placeholder="Note (optional)"
-            value={note}
-            onChange={(e) => setNote(e.target.value)}
-            onBlur={() => save()}
-          />
-        )}
-      </div>
+    const labelOpen = goal.type === 'binary' ? 'Mark done' : 'Mark worked on';
+    const toggle = (
+      <CheckToggle
+        done={done}
+        disabled={saving}
+        labelDone="Undo today"
+        labelOpen={labelOpen}
+        onToggle={() => {
+          const next = done ? 0 : 1;
+          setValue(next);
+          save(next);
+        }}
+      />
     );
-  }
-
-  if (goal.type === 'quantitative') {
+    if (compact) return toggle;
     return (
-      <div className={`flex items-center gap-2 ${compact ? '' : 'flex-col items-stretch'}`}>
-        <div className="flex items-center gap-2">
-          <input
-            type="number"
-            step="any"
-            inputMode="decimal"
-            className="input w-28"
-            value={value}
-            onChange={(e) => setValue(parseFloat(e.target.value) || 0)}
-          />
-          <span className="text-sm text-muted">{goal.targetUnit ?? ''}</span>
-          <button className="btn-primary" onClick={() => save()} disabled={saving}>
-            {saving ? 'Saving…' : saved ? 'Saved ✓' : 'Log'}
-          </button>
+      <div className="flex flex-col items-stretch gap-3">
+        <div className="flex items-center gap-3">
+          {toggle}
+          <span className="text-sm text-muted">{done ? 'Done for today' : labelOpen}</span>
         </div>
-        {!compact && (
-          <input
-            className="input"
-            placeholder="Note (optional)"
-            value={note}
-            onChange={(e) => setNote(e.target.value)}
-          />
-        )}
+        <input
+          className="input"
+          placeholder="Note (optional)"
+          value={note}
+          onChange={(e) => setNote(e.target.value)}
+          onBlur={() => save()}
+        />
       </div>
     );
   }
 
-  // milestone — toggle done for today (e.g. "worked on it")
+  // quantitative
   return (
-    <button
-      onClick={() => {
-        const next = value > 0 ? 0 : 1;
-        setValue(next);
-        save(next);
-      }}
-      className={value > 0 ? 'btn-primary' : 'btn'}
-      disabled={saving}
-    >
-      {value > 0 ? '✓ Worked on it today' : 'Mark worked on'}
-    </button>
+    <div className={`flex items-center gap-2 ${compact ? '' : 'flex-col items-stretch'}`}>
+      <div className="flex items-center gap-2">
+        <input
+          type="number"
+          step="any"
+          inputMode="decimal"
+          aria-label={`Amount${goal.targetUnit ? ' in ' + goal.targetUnit : ''}`}
+          className="input w-24 tnum"
+          value={value}
+          onChange={(e) => setValue(parseFloat(e.target.value) || 0)}
+        />
+        {goal.targetUnit && <span className="text-sm text-muted">{goal.targetUnit}</span>}
+        <button className="btn-primary" onClick={() => save()} disabled={saving}>
+          {saved ? <Check size={16} /> : <Plus size={16} />}
+          {saving ? 'Saving…' : saved ? 'Logged' : 'Log'}
+        </button>
+      </div>
+      {!compact && (
+        <input
+          className="input"
+          placeholder="Note (optional)"
+          value={note}
+          onChange={(e) => setNote(e.target.value)}
+        />
+      )}
+    </div>
   );
 }

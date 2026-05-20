@@ -2,6 +2,7 @@
 
 import { useState, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
+import { CalendarCheck, LoaderCircle } from 'lucide-react';
 
 function LoginInner() {
   const router = useRouter();
@@ -26,21 +27,47 @@ function LoginInner() {
   }
 
   return (
-    <main className="min-h-screen grid place-items-center px-4">
-      <form onSubmit={submit} className="card p-6 w-full max-w-sm space-y-4">
-        <h1 className="text-xl font-semibold">Goal Tracking</h1>
-        <p className="text-sm text-muted">Enter your password to continue.</p>
-        <input
-          autoFocus
-          type="password"
-          className="input"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          placeholder="Password"
-        />
-        {error && <p className="text-sm text-bad">{error}</p>}
+    <main className="min-h-dvh grid place-items-center px-4">
+      <form onSubmit={submit} className="card p-7 w-full max-w-sm space-y-5 animate-fade-in">
+        <div className="flex flex-col items-center text-center gap-3">
+          <span className="grid place-items-center w-12 h-12 rounded-2xl bg-accent-solid text-accent-fg shadow-card">
+            <CalendarCheck size={24} strokeWidth={2.5} />
+          </span>
+          <div>
+            <h1 className="text-xl font-semibold tracking-tight">Goal Tracking</h1>
+            <p className="text-sm text-muted mt-1">Enter your password to continue</p>
+          </div>
+        </div>
+        <div className="space-y-1.5">
+          <label htmlFor="password" className="label">
+            Password
+          </label>
+          <input
+            id="password"
+            autoFocus
+            type="password"
+            autoComplete="current-password"
+            className="input"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            placeholder="••••••••"
+            aria-invalid={error ? true : undefined}
+          />
+          {error && (
+            <p role="alert" className="text-sm text-bad pt-0.5">
+              {error}
+            </p>
+          )}
+        </div>
         <button className="btn-primary w-full" disabled={loading || !password}>
-          {loading ? 'Checking…' : 'Sign in'}
+          {loading ? (
+            <>
+              <LoaderCircle size={16} className="animate-spin" />
+              Checking…
+            </>
+          ) : (
+            'Sign in'
+          )}
         </button>
       </form>
     </main>

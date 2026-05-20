@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { BellRing, BellOff, Send, ShieldAlert } from 'lucide-react';
 
 function urlBase64ToUint8Array(base64: string) {
   const padding = '='.repeat((4 - (base64.length % 4)) % 4);
@@ -90,35 +91,51 @@ export function PushControls() {
   }
 
   if (!supported) {
-    return <p className="text-sm text-bad">This browser doesn't support push notifications.</p>;
+    return (
+      <p className="flex items-center gap-2 text-sm text-bad">
+        <ShieldAlert size={16} />
+        This browser doesn&apos;t support push notifications.
+      </p>
+    );
   }
 
   return (
-    <div className="space-y-2">
-      <p className="text-sm">
-        Permission: <span className="font-mono">{permission}</span> · Subscribed:{' '}
-        <span className="font-mono">{subscribed ? 'yes' : 'no'}</span>
-      </p>
+    <div className="space-y-3">
+      <div className="flex items-center gap-2 text-sm">
+        <span
+          className={`inline-block w-2 h-2 rounded-full ${
+            subscribed ? 'bg-ok' : 'bg-muted-2'
+          }`}
+          aria-hidden
+        />
+        <span className="text-muted">
+          {subscribed ? 'Subscribed on this device' : 'Not subscribed on this device'}
+          {permission === 'denied' && ' · blocked in browser settings'}
+        </span>
+      </div>
       <div className="flex gap-2 flex-wrap">
         {!subscribed && (
           <button className="btn-primary" disabled={busy} onClick={enable}>
+            <BellRing size={16} />
             Enable push
           </button>
         )}
         {subscribed && (
           <>
             <button className="btn" disabled={busy} onClick={test}>
+              <Send size={16} />
               Send test
             </button>
             <button className="btn-danger" disabled={busy} onClick={disable}>
+              <BellOff size={16} />
               Unsubscribe
             </button>
           </>
         )}
       </div>
       <p className="text-xs text-muted">
-        On iOS, install to home screen first (Share → Add to Home Screen), then enable push from the
-        installed app.
+        On iOS, install to your home screen first (Share → Add to Home Screen), then enable push
+        from the installed app.
       </p>
     </div>
   );

@@ -3,6 +3,7 @@ import { notFound } from 'next/navigation';
 import { db } from '@/lib/db';
 import { goals, entries } from '@/lib/schema';
 import { and, eq, gte } from 'drizzle-orm';
+import { ArrowLeft, Flame, Trophy, Target as TargetIcon, CalendarClock, Pencil } from 'lucide-react';
 import { Nav } from '@/components/Nav';
 import { CheckInForm } from '@/components/CheckInForm';
 import { TrendChart } from '@/components/TrendChart';
@@ -10,6 +11,18 @@ import { Heatmap } from '@/components/Heatmap';
 import { GoalForm } from '@/components/GoalForm';
 import { addDaysISO, localDateStr } from '@/lib/date';
 import { bucketEntries, computeStreak, periodHits, periodKey } from '@/lib/cadence';
+
+function Stat({ icon: Icon, label, value }: { icon: any; label: string; value: string }) {
+  return (
+    <div className="flex items-center gap-2.5 rounded-xl bg-card-2 border border-border px-3 py-2">
+      <Icon size={18} className="text-accent shrink-0" />
+      <div className="leading-tight">
+        <div className="text-sm font-semibold tnum">{value}</div>
+        <div className="text-[11px] text-muted">{label}</div>
+      </div>
+    </div>
+  );
+}
 
 export const dynamic = 'force-dynamic';
 
@@ -61,53 +74,63 @@ export default async function GoalDetailPage({ params }: { params: Promise<{ id:
     cellMap.set(r.entryDate, { date: r.entryDate, level: lvl });
   }
 
+  const overdue = isTodo && !goal.completedAt && goal.dueDate != null && goal.dueDate < today;
+
   return (
     <>
       <Nav />
-      <main className="max-w-3xl mx-auto px-4 py-6 space-y-6">
-        <div className="flex items-start justify-between gap-4">
-          <div className="min-w-0">
-            <h1 className="text-2xl font-semibold truncate">{goal.title}</h1>
-            {goal.why && <p className="text-sm text-muted mt-1">Why: {goal.why}</p>}
-            <div className="text-xs text-muted mt-2 flex flex-wrap gap-x-3">
-              {isTodo ? (
-                <>
-                  <span>one-time</span>
-                  {goal.dueDate && (
-                    <span
-                      className={
-                        !goal.completedAt && goal.dueDate < today ? 'text-bad' : undefined
-                      }
-                    >
-                      due {goal.dueDate}
-                    </span>
-                  )}
-                  <span>{goal.completedAt ? 'completed' : 'open'}</span>
-                </>
-              ) : (
-                <>
-                  <span>{goal.type}</span>
-                  <span>{goal.cadence}</span>
-                  {goal.targetValue ? (
-                    <span>
-                      target {goal.targetValue} {goal.targetUnit ?? ''}
-                    </span>
-                  ) : null}
-                  <span>🔥 current {streak.current}</span>
-                  <span>best {streak.longest}</span>
-                </>
-              )}
-            </div>
+      <main className="max-w-3xl mx-auto px-4 py-8 space-y-6 animate-fade-in">
+        <Link
+          href="/goals"
+          className="inline-flex items-center gap-1.5 text-sm text-muted hover:text-fg transition-colors"
+        >
+          <ArrowLeft size={16} />
+          All goals
+        </Link>
+
+        <header className="space-y-3">
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="chip-accent capitalize">{isTodo ? 'one-time' : goal.type}</span>
+            {!isTodo && <span className="chip-muted capitalize">{goal.cadence}</span>}
+            {goal.pausedUntil && <span className="chip-muted">paused until {goal.pausedUntil}</span>}
+            {goal.archivedAt && <span className="chip-muted">archived</span>}
           </div>
-          <Link href="/goals" className="btn">
-            All goals
-          </Link>
-        </div>
+          <h1 className="text-2xl font-bold tracking-tight">{goal.title}</h1>
+          {goal.why && <p className="text-muted">{goal.why}</p>}
+        </header>
+
+        {/* Stats */}
+        {isTodo ? (
+          <div className="grid grid-cols-2 gap-2.5">
+            <Stat
+              icon={CalendarClock}
+              label="Due date"
+              value={goal.dueDate ?? 'None'}
+            />
+            <Stat
+              icon={TargetIcon}
+              label="Status"
+              value={goal.completedAt ? 'Completed' : overdue ? 'Overdue' : 'Open'}
+            />
+          </div>
+        ) : (
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5">
+            <Stat icon={Flame} label="Current streak" value={String(streak.current)} />
+            <Stat icon={Trophy} label="Best streak" value={String(streak.longest)} />
+            {goal.targetValue ? (
+              <Stat
+                icon={TargetIcon}
+                label="Target"
+                value={`${goal.targetValue} ${goal.targetUnit ?? ''}`.trim()}
+              />
+            ) : null}
+          </div>
+        )}
 
         {!goal.archivedAt && !goal.pausedUntil && (
-          <div className="card p-4">
-            <p className="text-sm font-medium mb-2">
-              {isTodo ? 'Mark this done when you finish it' : `Check in for today (${today})`}
+          <div className="card p-5">
+            <p className="text-sm font-semibold mb-3">
+              {isTodo ? 'Mark this done when you finish it' : `Check in for today · ${today}`}
             </p>
             <CheckInForm goal={goal} todayEntry={todayEntry} />
           </div>
@@ -115,9 +138,13 @@ export default async function GoalDetailPage({ params }: { params: Promise<{ id:
 
         {!isTodo && (
           <>
-            <div className="card p-4">
-              <p className="text-sm font-medium mb-2">
-                Trend ({goal.cadence === 'daily' ? 'last 30 days' : 'last 12 periods'})
+            <div className="card p-5">
+              <p className="text-sm font-semibold mb-3">
+                Trend
+                <span className="text-muted font-normal">
+                  {' · '}
+                  {goal.cadence === 'daily' ? 'last 30 days' : 'last 12 periods'}
+                </span>
               </p>
               <TrendChart
                 data={chartData}
@@ -127,16 +154,19 @@ export default async function GoalDetailPage({ params }: { params: Promise<{ id:
               />
             </div>
 
-            <div className="card p-4">
-              <p className="text-sm font-medium mb-2">History</p>
+            <div className="card p-5">
+              <p className="text-sm font-semibold mb-3">History</p>
               <Heatmap cells={[...cellMap.values()]} weeks={26} />
             </div>
           </>
         )}
 
-        <details className="card p-4">
-          <summary className="cursor-pointer text-sm font-medium">Edit goal</summary>
-          <div className="mt-3">
+        <details className="card p-5 group">
+          <summary className="flex items-center gap-2 cursor-pointer text-sm font-semibold list-none">
+            <Pencil size={16} className="text-accent" />
+            Edit goal
+          </summary>
+          <div className="mt-4 pt-4 border-t border-border">
             <GoalForm goal={goal} />
           </div>
         </details>

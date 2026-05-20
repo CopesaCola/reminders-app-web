@@ -1,14 +1,25 @@
 import Link from 'next/link';
 import { db } from '@/lib/db';
 import { goals, entries } from '@/lib/schema';
-import { and, isNull, eq, gte, asc, desc } from 'drizzle-orm';
+import { isNull, gte, asc, desc } from 'drizzle-orm';
+import { Flame, Plus, Target, CircleCheck } from 'lucide-react';
 import { Nav } from '@/components/Nav';
 import { Heatmap } from '@/components/Heatmap';
 import { CheckInForm } from '@/components/CheckInForm';
+import { ProgressRing } from '@/components/ProgressRing';
 import { addDaysISO, localDateStr } from '@/lib/date';
 import { computeStreak, isPaused, periodHits, periodKey, bucketEntries } from '@/lib/cadence';
 
 export const dynamic = 'force-dynamic';
+
+function greeting(): string {
+  const h = new Date().getHours();
+  if (h < 12) return 'Good morning';
+  if (h < 18) return 'Good afternoon';
+  return 'Good evening';
+}
+
+const periodWord = (c: string) => (c === 'daily' ? 'today' : c === 'weekly' ? 'this week' : 'this month');
 
 export default async function DashboardPage() {
   const today = localDateStr();
@@ -22,7 +33,6 @@ export default async function DashboardPage() {
 
   const entryRows = await db.select().from(entries).where(gte(entries.entryDate, since));
 
-  // Group entries by goal
   const entriesByGoal = new Map<number, typeof entryRows>();
   for (const e of entryRows) {
     const arr = entriesByGoal.get(e.goalId) ?? [];
@@ -30,10 +40,8 @@ export default async function DashboardPage() {
     entriesByGoal.set(e.goalId, arr);
   }
 
-  // Split one-time todos out from recurring goals.
   const recurringGoals = goalRows.filter((g) => g.type !== 'todo');
   const todoGoals = goalRows.filter((g) => g.type === 'todo');
-  // Show open todos first (overdue first), then completed ones last.
   todoGoals.sort((a, b) => {
     const ac = a.completedAt ? 1 : 0;
     const bc = b.completedAt ? 1 : 0;
@@ -43,7 +51,19 @@ export default async function DashboardPage() {
     return ad.localeCompare(bd);
   });
 
-  // Aggregate heatmap across recurring daily goals: level = fraction of goals hit that day.
+  // Today's progress across active, non-paused recurring goals whose current period is "today-ish".
+  let dueCount = 0;
+  let hitCount = 0;
+  for (const g of recurringGoals) {
+    if (isPaused(g, today)) continue;
+    const gEntries = entriesByGoal.get(g.id) ?? [];
+    const total = bucketEntries(g, gEntries).get(periodKey(g.cadence as any, today)) ?? 0;
+    dueCount++;
+    if (periodHits(g, total)) hitCount++;
+  }
+  const openTodos = todoGoals.filter((t) => !t.completedAt).length;
+
+  // Heatmap: fraction of daily recurring goals hit each day over ~6 months.
   const dailyHitCount = new Map<string, { hit: number; total: number }>();
   for (const g of recurringGoals) {
     if (g.cadence !== 'daily') continue;
@@ -73,113 +93,164 @@ export default async function DashboardPage() {
   return (
     <>
       <Nav />
-      <main className="max-w-3xl mx-auto px-4 py-6 space-y-6">
-        <section className="card p-4">
-          <div className="flex items-center justify-between">
-            <h2 className="text-sm font-medium text-muted">
-              Last ~6 months
-            </h2>
-            <span className="text-xs text-muted">{today}</span>
+      <main className="max-w-3xl mx-auto px-4 py-8 space-y-6 animate-fade-in">
+        {/* Header */}
+        <header className="flex items-end justify-between gap-4">
+          <div>
+            <p className="text-sm text-muted">{greeting()}</p>
+            <h1 className="text-2xl font-bold tracking-tight">
+              {dueCount === 0
+                ? 'Ready when you are'
+                : hitCount === dueCount
+                  ? 'All done for today'
+                  : `${hitCount} of ${dueCount} done today`}
+            </h1>
           </div>
-          <Heatmap cells={heatCells} />
-          <p className="text-xs text-muted mt-1">
-            Each square is one day. Darker = more daily goals hit.
-          </p>
-        </section>
+          <Link href="/goals/new" className="btn-primary shrink-0">
+            <Plus size={16} />
+            New
+          </Link>
+        </header>
 
+        {/* Heatmap */}
+        {heatCells.length > 0 && (
+          <section className="card p-5">
+            <div className="flex items-center justify-between mb-3">
+              <h2 className="text-sm font-semibold text-muted">Consistency</h2>
+              <span className="text-xs text-muted-2 tnum">last 6 months</span>
+            </div>
+            <Heatmap cells={heatCells} />
+            <div className="flex items-center gap-1.5 mt-3 text-xs text-muted-2">
+              <span>Less</span>
+              <span className="w-3 h-3 rounded-[3px] bg-card-2 border border-border" />
+              <span className="w-3 h-3 rounded-[3px] bg-accent/30" />
+              <span className="w-3 h-3 rounded-[3px] bg-accent/55" />
+              <span className="w-3 h-3 rounded-[3px] bg-accent/80" />
+              <span className="w-3 h-3 rounded-[3px] bg-accent" />
+              <span>More</span>
+            </div>
+          </section>
+        )}
+
+        {/* Empty state */}
         {goalRows.length === 0 && (
-          <div className="card p-6 text-center">
-            <p className="text-muted">No goals yet.</p>
-            <Link href="/goals/new" className="btn-primary mt-3 inline-flex">
+          <div className="card p-10 text-center flex flex-col items-center gap-3">
+            <span className="grid place-items-center w-14 h-14 rounded-2xl bg-accent-soft text-accent">
+              <Target size={26} />
+            </span>
+            <div>
+              <p className="font-semibold">No goals yet</p>
+              <p className="text-sm text-muted mt-1">
+                Track a habit, a weekly target, or a one-time task.
+              </p>
+            </div>
+            <Link href="/goals/new" className="btn-primary mt-1">
+              <Plus size={16} />
               Create your first goal
             </Link>
           </div>
         )}
 
-        <section className="space-y-3">
-          {recurringGoals.map((g) => {
-            const gEntries = entriesByGoal.get(g.id) ?? [];
-            const todayEntry = gEntries.find((e) => e.entryDate === today) ?? null;
-            const streak = computeStreak(g, gEntries, today);
-            const paused = isPaused(g, today);
-            const periodTotal =
-              bucketEntries(g, gEntries).get(periodKey(g.cadence as any, today)) ?? 0;
-            const target = g.targetValue ?? 0;
-            return (
-              <div key={g.id} className="card p-4">
-                <div className="flex items-start justify-between gap-3">
-                  <div className="min-w-0">
-                    <Link
-                      href={`/goals/${g.id}`}
-                      className="font-medium text-base hover:underline truncate block"
-                    >
-                      {g.title}
-                    </Link>
-                    {g.why && (
-                      <p className="text-xs text-muted mt-0.5 line-clamp-2">
-                        Why: {g.why}
-                      </p>
-                    )}
-                    <div className="text-xs text-muted mt-1 flex flex-wrap gap-x-3 gap-y-0.5">
-                      <span>{g.cadence}</span>
+        {/* Recurring goals */}
+        {recurringGoals.length > 0 && (
+          <section className="space-y-2.5">
+            {recurringGoals.map((g) => {
+              const gEntries = entriesByGoal.get(g.id) ?? [];
+              const todayEntry = gEntries.find((e) => e.entryDate === today) ?? null;
+              const streak = computeStreak(g, gEntries, today);
+              const paused = isPaused(g, today);
+              const periodTotal =
+                bucketEntries(g, gEntries).get(periodKey(g.cadence as any, today)) ?? 0;
+              const target = g.targetValue ?? 0;
+              const hit = periodHits(g, periodTotal);
+              return (
+                <div
+                  key={g.id}
+                  className={`card p-4 transition-colors ${hit ? 'border-accent/30' : ''}`}
+                >
+                  <div className="flex items-center justify-between gap-3">
+                    <div className="flex items-center gap-3 min-w-0">
                       {g.type === 'quantitative' && target > 0 && (
-                        <span>
-                          {periodTotal}/{target} {g.targetUnit ?? ''}
-                        </span>
+                        <ProgressRing
+                          value={periodTotal}
+                          target={target}
+                          label={`${periodTotal} of ${target} ${g.targetUnit ?? ''} ${periodWord(g.cadence)}`}
+                        />
                       )}
-                      <span>🔥 {streak.current}</span>
-                      {streak.longest > 0 && <span>best {streak.longest}</span>}
-                      {paused && <span className="text-warn">paused</span>}
+                      <div className="min-w-0">
+                        <Link
+                          href={`/goals/${g.id}`}
+                          className="font-semibold hover:text-accent transition-colors truncate block"
+                        >
+                          {g.title}
+                        </Link>
+                        <div className="text-xs text-muted mt-1 flex flex-wrap items-center gap-x-2.5 gap-y-1">
+                          <span className="capitalize">{g.cadence}</span>
+                          {g.type === 'quantitative' && target > 0 && (
+                            <span className="tnum">
+                              {periodTotal}/{target} {g.targetUnit ?? ''}
+                            </span>
+                          )}
+                          {streak.current > 0 && (
+                            <span className="inline-flex items-center gap-1 text-accent font-medium">
+                              <Flame size={13} />
+                              <span className="tnum">{streak.current}</span>
+                            </span>
+                          )}
+                          {paused && <span className="chip-muted">paused</span>}
+                        </div>
+                      </div>
+                    </div>
+                    <div className="shrink-0">
+                      {paused ? (
+                        <span className="text-xs text-muted-2">resumes {g.pausedUntil}</span>
+                      ) : (
+                        <CheckInForm goal={g} todayEntry={todayEntry} compact />
+                      )}
                     </div>
                   </div>
-                  <div className="shrink-0">
-                    {paused ? (
-                      <span className="text-xs text-muted">resumes {g.pausedUntil}</span>
-                    ) : (
-                      <CheckInForm goal={g} todayEntry={todayEntry} compact />
-                    )}
-                  </div>
                 </div>
-              </div>
-            );
-          })}
-        </section>
+              );
+            })}
+          </section>
+        )}
 
+        {/* To-dos */}
         {todoGoals.length > 0 && (
-          <section className="space-y-2">
-            <h2 className="text-sm font-medium text-muted">To-do</h2>
+          <section className="space-y-2.5">
+            <h2 className="flex items-center gap-2 text-sm font-semibold text-muted px-1">
+              <CircleCheck size={16} />
+              To-do
+              {openTodos > 0 && <span className="chip-muted tnum">{openTodos}</span>}
+            </h2>
             {todoGoals.map((g) => {
               const done = g.completedAt != null;
               const overdue = !done && g.dueDate != null && g.dueDate < today;
               const dueToday = !done && g.dueDate === today;
               return (
-                <div key={g.id} className="card p-3">
+                <div key={g.id} className={`card p-3.5 ${done ? 'opacity-60' : ''}`}>
                   <div className="flex items-center justify-between gap-3">
-                    <div className="min-w-0">
-                      <Link
-                        href={`/goals/${g.id}`}
-                        className={`font-medium hover:underline truncate block ${
-                          done ? 'line-through text-muted' : ''
-                        }`}
-                      >
-                        {g.title}
-                      </Link>
-                      <div className="text-xs mt-0.5 flex flex-wrap gap-x-3">
+                    <div className="flex items-center gap-3 min-w-0">
+                      <CheckInForm goal={g} compact />
+                      <div className="min-w-0">
+                        <Link
+                          href={`/goals/${g.id}`}
+                          className={`font-medium hover:text-accent transition-colors truncate block ${
+                            done ? 'line-through text-muted' : ''
+                          }`}
+                        >
+                          {g.title}
+                        </Link>
                         {g.dueDate && (
                           <span
-                            className={
-                              overdue ? 'text-bad' : dueToday ? 'text-warn' : 'text-muted'
-                            }
+                            className={`text-xs ${
+                              overdue ? 'text-bad font-medium' : dueToday ? 'text-warn font-medium' : 'text-muted'
+                            }`}
                           >
-                            {overdue ? 'Overdue ' : dueToday ? 'Due today' : 'Due '}
-                            {!dueToday && g.dueDate}
+                            {overdue ? `Overdue · ${g.dueDate}` : dueToday ? 'Due today' : `Due ${g.dueDate}`}
                           </span>
                         )}
-                        {done && <span className="text-muted">completed</span>}
                       </div>
-                    </div>
-                    <div className="shrink-0">
-                      <CheckInForm goal={g} compact />
                     </div>
                   </div>
                 </div>

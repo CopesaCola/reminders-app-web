@@ -24,7 +24,7 @@ export function Heatmap({ cells, weeks = 26 }: { cells: Cell[]; weeks?: number }
   }
 
   const colors = [
-    'bg-muted/15',
+    'bg-card-2 border border-border',
     'bg-accent/30',
     'bg-accent/55',
     'bg-accent/80',
@@ -32,14 +32,14 @@ export function Heatmap({ cells, weeks = 26 }: { cells: Cell[]; weeks?: number }
   ];
 
   return (
-    <div className="flex gap-1 overflow-x-auto py-1">
+    <div className="flex gap-[3px] overflow-x-auto py-1">
       {grid.map((col, i) => (
-        <div key={i} className="flex flex-col gap-1">
+        <div key={i} className="flex flex-col gap-[3px]">
           {col.map((c, j) => (
             <div
               key={j}
               title={c ? `${c.date}${c.label ? ' — ' + c.label : ''}` : ''}
-              className={`w-3 h-3 rounded-sm ${c ? colors[c.level] : 'opacity-0'}`}
+              className={`w-3 h-3 rounded-[3px] ${c ? colors[c.level] : 'opacity-0'}`}
             />
           ))}
         </div>

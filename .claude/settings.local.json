@@ -7,7 +7,21 @@
       "Bash(gh auth *)",
       "Bash(gh api *)",
       "Bash(bash -n unraid/setup.sh)",
-      "Bash(git push *)"
+      "Bash(git push *)",
+      "Skill(ui-ux-pro-max)",
+      "Skill(ui-ux-pro-max:*)",
+      "Read(//c/Users/Graham/.claude/plugins/marketplaces/ui-ux-pro-max-skill/.claude/skills/ui-ux-pro-max/**)",
+      "Bash(python scripts/search.py \"productivity goal habit tracker minimal focused calm\" --design-system -f markdown -p \"Goal Tracking\")",
+      "Bash(find . -name \"*.py\" -maxdepth 3)",
+      "Bash(ls data *)",
+      "Bash(cd \"C:/Users/Graham/.claude/plugins/marketplaces/ui-ux-pro-max-skill/.claude/skills/src/ui-ux-pro-max\")",
+      "Bash(find . -name \"*.py\")",
+      "Bash(find . -name \"*.csv\")",
+      "Read(//c/Users/Graham/.claude/plugins/marketplaces/ui-ux-pro-max-skill/.claude/skills/src/**)",
+      "Read(//c/Users/Graham/.claude/plugins/marketplaces/ui-ux-pro-max-skill/.claude/skills/**)",
+      "Bash(find C:/Users/Graham/.claude/plugins/marketplaces/ui-ux-pro-max-skill/.claude/skills '\\(' -name *.py -o -name *.csv '\\)')",
+      "Bash(npm install *)",
+      "Bash(npm run *)"
     ]
   }
 }
