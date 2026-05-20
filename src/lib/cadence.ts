@@ -54,6 +54,8 @@ export function computeStreak(goal: Goal, entries: Entry[], todayStr: string): {
   current: number;
   longest: number;
 } {
+  // One-time todos have no recurring cadence, so streaks don't apply.
+  if (goal.type === 'todo') return { current: 0, longest: 0 };
   const buckets = bucketEntries(goal, entries);
   const cadence = goal.cadence as Cadence;
   const currentPeriod = periodKey(cadence, todayStr);

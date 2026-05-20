@@ -41,6 +41,29 @@ export function CheckInForm({
     }
   }
 
+  // One-time todo: completion lives on the goal itself, not in entries.
+  if (goal.type === 'todo') {
+    const done = goal.completedAt != null;
+    return (
+      <button
+        onClick={async () => {
+          setSaving(true);
+          const res = await fetch(`/api/goals/${goal.id}`, {
+            method: 'PATCH',
+            headers: { 'content-type': 'application/json' },
+            body: JSON.stringify({ completed: !done }),
+          });
+          setSaving(false);
+          if (res.ok) router.refresh();
+        }}
+        className={done ? 'btn-primary' : 'btn'}
+        disabled={saving}
+      >
+        {done ? '✓ Done' : 'Mark done'}
+      </button>
+    );
+  }
+
   if (goal.type === 'binary') {
     const done = (todayEntry?.value ?? value) > 0;
     return (

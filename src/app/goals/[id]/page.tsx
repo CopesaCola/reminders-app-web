@@ -18,12 +18,15 @@ export default async function GoalDetailPage({ params }: { params: Promise<{ id:
   const goal = (await db.select().from(goals).where(eq(goals.id, Number(id))).limit(1))[0];
   if (!goal) notFound();
 
+  const isTodo = goal.type === 'todo';
   const today = localDateStr();
   const since = addDaysISO(today, -365);
-  const rows = await db
-    .select()
-    .from(entries)
-    .where(and(eq(entries.goalId, goal.id), gte(entries.entryDate, since)));
+  const rows = isTodo
+    ? []
+    : await db
+        .select()
+        .from(entries)
+        .where(and(eq(entries.goalId, goal.id), gte(entries.entryDate, since)));
 
   const todayEntry = rows.find((r) => r.entryDate === today) ?? null;
   const streak = computeStreak(goal, rows, today);
@@ -67,15 +70,33 @@ export default async function GoalDetailPage({ params }: { params: Promise<{ id:
             <h1 className="text-2xl font-semibold truncate">{goal.title}</h1>
             {goal.why && <p className="text-sm text-muted mt-1">Why: {goal.why}</p>}
             <div className="text-xs text-muted mt-2 flex flex-wrap gap-x-3">
-              <span>{goal.type}</span>
-              <span>{goal.cadence}</span>
-              {goal.targetValue ? (
-                <span>
-                  target {goal.targetValue} {goal.targetUnit ?? ''}
-                </span>
-              ) : null}
-              <span>🔥 current {streak.current}</span>
-              <span>best {streak.longest}</span>
+              {isTodo ? (
+                <>
+                  <span>one-time</span>
+                  {goal.dueDate && (
+                    <span
+                      className={
+                        !goal.completedAt && goal.dueDate < today ? 'text-bad' : undefined
+                      }
+                    >
+                      due {goal.dueDate}
+                    </span>
+                  )}
+                  <span>{goal.completedAt ? 'completed' : 'open'}</span>
+                </>
+              ) : (
+                <>
+                  <span>{goal.type}</span>
+                  <span>{goal.cadence}</span>
+                  {goal.targetValue ? (
+                    <span>
+                      target {goal.targetValue} {goal.targetUnit ?? ''}
+                    </span>
+                  ) : null}
+                  <span>🔥 current {streak.current}</span>
+                  <span>best {streak.longest}</span>
+                </>
+              )}
             </div>
           </div>
           <Link href="/goals" className="btn">
@@ -85,27 +106,33 @@ export default async function GoalDetailPage({ params }: { params: Promise<{ id:
 
         {!goal.archivedAt && !goal.pausedUntil && (
           <div className="card p-4">
-            <p className="text-sm font-medium mb-2">Check in for today ({today})</p>
+            <p className="text-sm font-medium mb-2">
+              {isTodo ? 'Mark this done when you finish it' : `Check in for today (${today})`}
+            </p>
             <CheckInForm goal={goal} todayEntry={todayEntry} />
           </div>
         )}
 
-        <div className="card p-4">
-          <p className="text-sm font-medium mb-2">
-            Trend ({goal.cadence === 'daily' ? 'last 30 days' : 'last 12 periods'})
-          </p>
-          <TrendChart
-            data={chartData}
-            target={goal.targetValue ?? undefined}
-            unit={goal.targetUnit ?? undefined}
-            kind={goal.cadence === 'daily' ? 'line' : 'bar'}
-          />
-        </div>
+        {!isTodo && (
+          <>
+            <div className="card p-4">
+              <p className="text-sm font-medium mb-2">
+                Trend ({goal.cadence === 'daily' ? 'last 30 days' : 'last 12 periods'})
+              </p>
+              <TrendChart
+                data={chartData}
+                target={goal.targetValue ?? undefined}
+                unit={goal.targetUnit ?? undefined}
+                kind={goal.cadence === 'daily' ? 'line' : 'bar'}
+              />
+            </div>
 
-        <div className="card p-4">
-          <p className="text-sm font-medium mb-2">History</p>
-          <Heatmap cells={[...cellMap.values()]} weeks={26} />
-        </div>
+            <div className="card p-4">
+              <p className="text-sm font-medium mb-2">History</p>
+              <Heatmap cells={[...cellMap.values()]} weeks={26} />
+            </div>
+          </>
+        )}
 
         <details className="card p-4">
           <summary className="cursor-pointer text-sm font-medium">Edit goal</summary>

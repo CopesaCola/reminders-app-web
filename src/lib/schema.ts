@@ -4,9 +4,9 @@ export const goals = pgTable('goals', {
   id: serial('id').primaryKey(),
   title: text('title').notNull(),
   why: text('why'),
-  // 'binary' | 'quantitative' | 'milestone'
+  // 'binary' | 'quantitative' | 'milestone' | 'todo'
   type: text('type').notNull(),
-  // 'daily' | 'weekly' | 'monthly'
+  // 'daily' | 'weekly' | 'monthly' — ignored for one-time 'todo' goals
   cadence: text('cadence').notNull().default('daily'),
   // For quantitative goals: target value per cadence period (e.g. 20 miles per week)
   targetValue: real('target_value'),
@@ -14,6 +14,9 @@ export const goals = pgTable('goals', {
   // Reminder schedule — minutes after midnight in local tz, plus days bitmask (Sun=1, Mon=2, ...)
   remindAtMinutes: integer('remind_at_minutes'),
   remindDaysMask: integer('remind_days_mask'),
+  // For 'todo' goals: optional due date and one-time completion timestamp.
+  dueDate: date('due_date'),
+  completedAt: timestamp('completed_at'),
   // Pause window — skip reminders & don't break streaks while paused
   pausedUntil: date('paused_until'),
   archivedAt: timestamp('archived_at'),

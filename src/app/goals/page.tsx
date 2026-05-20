@@ -30,9 +30,19 @@ export default async function GoalsPage() {
                 <div>
                   <p className="font-medium">{g.title}</p>
                   <p className="text-xs text-muted">
-                    {g.type} · {g.cadence}
-                    {g.targetValue ? ` · target ${g.targetValue} ${g.targetUnit ?? ''}` : ''}
-                    {g.pausedUntil ? ` · paused until ${g.pausedUntil}` : ''}
+                    {g.type === 'todo' ? (
+                      <>
+                        one-time
+                        {g.dueDate ? ` · due ${g.dueDate}` : ''}
+                        {` · ${g.completedAt ? 'completed' : 'open'}`}
+                      </>
+                    ) : (
+                      <>
+                        {g.type} · {g.cadence}
+                        {g.targetValue ? ` · target ${g.targetValue} ${g.targetUnit ?? ''}` : ''}
+                        {g.pausedUntil ? ` · paused until ${g.pausedUntil}` : ''}
+                      </>
+                    )}
                   </p>
                 </div>
                 <span className="text-muted">›</span>

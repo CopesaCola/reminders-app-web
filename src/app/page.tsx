@@ -30,10 +30,22 @@ export default async function DashboardPage() {
     entriesByGoal.set(e.goalId, arr);
   }
 
-  // Aggregate heatmap across all goals: a day is "hit" if every active goal due that day was satisfied.
-  // Simpler approach: level = fraction of goals hit that day, scaled.
+  // Split one-time todos out from recurring goals.
+  const recurringGoals = goalRows.filter((g) => g.type !== 'todo');
+  const todoGoals = goalRows.filter((g) => g.type === 'todo');
+  // Show open todos first (overdue first), then completed ones last.
+  todoGoals.sort((a, b) => {
+    const ac = a.completedAt ? 1 : 0;
+    const bc = b.completedAt ? 1 : 0;
+    if (ac !== bc) return ac - bc;
+    const ad = a.dueDate ?? '9999-12-31';
+    const bd = b.dueDate ?? '9999-12-31';
+    return ad.localeCompare(bd);
+  });
+
+  // Aggregate heatmap across recurring daily goals: level = fraction of goals hit that day.
   const dailyHitCount = new Map<string, { hit: number; total: number }>();
-  for (const g of goalRows) {
+  for (const g of recurringGoals) {
     if (g.cadence !== 'daily') continue;
     const gEntries = entriesByGoal.get(g.id) ?? [];
     const byDate = new Map(gEntries.map((e) => [e.entryDate, e.value]));
@@ -85,7 +97,7 @@ export default async function DashboardPage() {
         )}
 
         <section className="space-y-3">
-          {goalRows.map((g) => {
+          {recurringGoals.map((g) => {
             const gEntries = entriesByGoal.get(g.id) ?? [];
             const todayEntry = gEntries.find((e) => e.entryDate === today) ?? null;
             const streak = computeStreak(g, gEntries, today);
@@ -132,6 +144,49 @@ export default async function DashboardPage() {
             );
           })}
         </section>
+
+        {todoGoals.length > 0 && (
+          <section className="space-y-2">
+            <h2 className="text-sm font-medium text-muted">To-do</h2>
+            {todoGoals.map((g) => {
+              const done = g.completedAt != null;
+              const overdue = !done && g.dueDate != null && g.dueDate < today;
+              const dueToday = !done && g.dueDate === today;
+              return (
+                <div key={g.id} className="card p-3">
+                  <div className="flex items-center justify-between gap-3">
+                    <div className="min-w-0">
+                      <Link
+                        href={`/goals/${g.id}`}
+                        className={`font-medium hover:underline truncate block ${
+                          done ? 'line-through text-muted' : ''
+                        }`}
+                      >
+                        {g.title}
+                      </Link>
+                      <div className="text-xs mt-0.5 flex flex-wrap gap-x-3">
+                        {g.dueDate && (
+                          <span
+                            className={
+                              overdue ? 'text-bad' : dueToday ? 'text-warn' : 'text-muted'
+                            }
+                          >
+                            {overdue ? 'Overdue ' : dueToday ? 'Due today' : 'Due '}
+                            {!dueToday && g.dueDate}
+                          </span>
+                        )}
+                        {done && <span className="text-muted">completed</span>}
+                      </div>
+                    </div>
+                    <div className="shrink-0">
+                      <CheckInForm goal={g} compact />
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </section>
+        )}
       </main>
     </>
   );

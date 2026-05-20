@@ -6,15 +6,19 @@ import { isNull, asc, desc } from 'drizzle-orm';
 
 const dayMaskMax = 0b1111111; // 7 days
 
+const isoDate = z.string().regex(/^\d{4}-\d{2}-\d{2}$/);
+
 const create = z.object({
   title: z.string().min(1).max(120),
   why: z.string().max(2000).optional().nullable(),
-  type: z.enum(['binary', 'quantitative', 'milestone']),
-  cadence: z.enum(['daily', 'weekly', 'monthly']),
+  type: z.enum(['binary', 'quantitative', 'milestone', 'todo']),
+  // Cadence is irrelevant for one-time todos; default to daily so the column stays non-null.
+  cadence: z.enum(['daily', 'weekly', 'monthly']).default('daily'),
   targetValue: z.number().nonnegative().optional().nullable(),
   targetUnit: z.string().max(40).optional().nullable(),
   remindAtMinutes: z.number().int().min(0).max(1439).optional().nullable(),
   remindDaysMask: z.number().int().min(0).max(dayMaskMax).optional().nullable(),
+  dueDate: isoDate.optional().nullable(),
 });
 
 export async function GET() {

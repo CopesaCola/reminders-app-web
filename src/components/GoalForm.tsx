@@ -6,7 +6,7 @@ import type { Goal } from '@/lib/schema';
 
 const dayLabels = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
-type GoalType = 'binary' | 'quantitative' | 'milestone';
+type GoalType = 'binary' | 'quantitative' | 'milestone' | 'todo';
 type Cadence = 'daily' | 'weekly' | 'monthly';
 
 type ExampleGoal = {
@@ -67,6 +67,16 @@ const TYPE_INFO: Record<GoalType, { blurb: string; goodFor: string; examples: Ex
       { title: 'Renovate the kitchen', cadence: 'weekly' },
     ],
   },
+  todo: {
+    blurb:
+      'A one-time task — like a to-do item. No cadence or streak. Check it off once and it’s done. Add an optional due date to get reminded.',
+    goodFor: 'Single errands and deadlines you just need to remember and finish once.',
+    examples: [
+      { title: 'Renew passport', cadence: 'daily' },
+      { title: 'File taxes', cadence: 'daily' },
+      { title: 'Book dentist appointment', cadence: 'daily' },
+    ],
+  },
 };
 
 export function GoalForm({ goal }: { goal?: Goal }) {
@@ -77,6 +87,7 @@ export function GoalForm({ goal }: { goal?: Goal }) {
   const [cadence, setCadence] = useState<Cadence>((goal?.cadence as Cadence) ?? 'daily');
   const [targetValue, setTargetValue] = useState<number | ''>(goal?.targetValue ?? '');
   const [targetUnit, setTargetUnit] = useState(goal?.targetUnit ?? '');
+  const [dueDate, setDueDate] = useState(goal?.dueDate ?? '');
   const [time, setTime] = useState(
     goal?.remindAtMinutes != null
       ? `${String(Math.floor(goal.remindAtMinutes / 60)).padStart(2, '0')}:${String(
@@ -109,6 +120,7 @@ export function GoalForm({ goal }: { goal?: Goal }) {
       targetUnit: type === 'quantitative' ? targetUnit || null : null,
       remindAtMinutes: hh * 60 + mm,
       remindDaysMask: daysMask,
+      dueDate: type === 'todo' ? dueDate || null : null,
     };
     if (!goal) payload.type = type;
     if (goal) payload.pausedUntil = pausedUntil || null;
@@ -177,15 +189,15 @@ export function GoalForm({ goal }: { goal?: Goal }) {
       {!goal && (
         <div>
           <label className="label">Type</label>
-          <div className="grid grid-cols-3 gap-2 mt-1">
-            {(['binary', 'quantitative', 'milestone'] as const).map((t) => (
+          <div className="grid grid-cols-2 gap-2 mt-1">
+            {(['binary', 'quantitative', 'milestone', 'todo'] as const).map((t) => (
               <button
                 type="button"
                 key={t}
                 onClick={() => setType(t)}
                 className={type === t ? 'btn-primary' : 'btn'}
               >
-                {t}
+                {t === 'todo' ? 'one-time' : t}
               </button>
             ))}
           </div>
@@ -221,21 +233,39 @@ export function GoalForm({ goal }: { goal?: Goal }) {
         </div>
       )}
 
-      <div>
-        <label className="label">Cadence</label>
-        <div className="grid grid-cols-3 gap-2 mt-1">
-          {(['daily', 'weekly', 'monthly'] as const).map((c) => (
-            <button
-              type="button"
-              key={c}
-              onClick={() => setCadence(c)}
-              className={cadence === c ? 'btn-primary' : 'btn'}
-            >
-              {c}
-            </button>
-          ))}
+      {type !== 'todo' && (
+        <div>
+          <label className="label">Cadence</label>
+          <div className="grid grid-cols-3 gap-2 mt-1">
+            {(['daily', 'weekly', 'monthly'] as const).map((c) => (
+              <button
+                type="button"
+                key={c}
+                onClick={() => setCadence(c)}
+                className={cadence === c ? 'btn-primary' : 'btn'}
+              >
+                {c}
+              </button>
+            ))}
+          </div>
         </div>
-      </div>
+      )}
+
+      {type === 'todo' && (
+        <div>
+          <label className="label">Due date (optional)</label>
+          <input
+            type="date"
+            className="input mt-1 max-w-[200px]"
+            value={dueDate ?? ''}
+            onChange={(e) => setDueDate(e.target.value)}
+          />
+          <p className="text-xs text-muted mt-1">
+            You’ll get a reminder on your chosen days until it’s checked off — plus a nudge if it’s
+            due today or overdue.
+          </p>
+        </div>
+      )}
 
       {type === 'quantitative' && (
         <div className="grid grid-cols-2 gap-3">

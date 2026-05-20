@@ -4,6 +4,12 @@ import { db } from '@/lib/db';
 import { goals } from '@/lib/schema';
 import { eq } from 'drizzle-orm';
 
+const isoDate = z
+  .string()
+  .regex(/^\d{4}-\d{2}-\d{2}$/)
+  .nullable()
+  .optional();
+
 const update = z.object({
   title: z.string().min(1).max(120).optional(),
   why: z.string().max(2000).nullable().optional(),
@@ -13,11 +19,10 @@ const update = z.object({
   remindAtMinutes: z.number().int().min(0).max(1439).nullable().optional(),
   remindDaysMask: z.number().int().min(0).max(0b1111111).nullable().optional(),
   // ISO date string YYYY-MM-DD or null
-  pausedUntil: z
-    .string()
-    .regex(/^\d{4}-\d{2}-\d{2}$/)
-    .nullable()
-    .optional(),
+  pausedUntil: isoDate,
+  dueDate: isoDate,
+  // Mark a one-time todo done / not-done.
+  completed: z.boolean().optional(),
   sortOrder: z.number().int().optional(),
   archived: z.boolean().optional(),
 });
@@ -35,10 +40,12 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
   const parsed = update.safeParse(body);
   if (!parsed.success) return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
 
-  const { archived, ...rest } = parsed.data;
+  const { archived, completed, ...rest } = parsed.data;
   const patch: Record<string, unknown> = { ...rest };
   if (archived === true) patch.archivedAt = new Date();
   if (archived === false) patch.archivedAt = null;
+  if (completed === true) patch.completedAt = new Date();
+  if (completed === false) patch.completedAt = null;
 
   const [row] = await db
     .update(goals)

@@ -46,6 +46,55 @@ async function handle(req: Request) {
 
   for (const g of activeGoals) {
     if (isPaused(g, today)) continue;
+
+    // One-time todos: remind on schedule until completed, plus a due-today/overdue nudge.
+    if (g.type === 'todo') {
+      if (g.completedAt) continue;
+      const dayBit = 1 << dow;
+      const dayMatches = g.remindDaysMask == null || (g.remindDaysMask & dayBit) !== 0;
+      const overdue = g.dueDate != null && g.dueDate < today;
+      const dueToday = g.dueDate === today;
+
+      const scheduledNow =
+        g.remindAtMinutes != null && dayMatches && Math.abs(minNow - g.remindAtMinutes) < WINDOW;
+
+      if (scheduledNow && !(await alreadySent(g.id, 'reminder', 60))) {
+        await sendPushToAll(
+          {
+            title: `To-do: ${g.title}`,
+            body: g.dueDate ? (overdue ? `Overdue (was due ${g.dueDate})` : `Due ${g.dueDate}`) : 'Still on your list.',
+            url: `/goals/${g.id}`,
+            tag: `goal-${g.id}`,
+            goalId: g.id,
+            actions: [
+              { action: 'done', title: '✓ Done' },
+              { action: 'open', title: 'Open' },
+            ],
+          },
+          'reminder'
+        );
+        fired.push({ goalId: g.id, kind: 'reminder' });
+      } else if ((overdue || dueToday) && minNow >= 9 * 60 && !(await alreadySent(g.id, 'nudge', 60 * 12))) {
+        // Due-date nudge once per day after 9am, even if no daily reminder time matched.
+        await sendPushToAll(
+          {
+            title: overdue ? `Overdue: ${g.title}` : `Due today: ${g.title}`,
+            body: overdue ? `Was due ${g.dueDate}. Knock it out?` : 'Due today — knock it out?',
+            url: `/goals/${g.id}`,
+            tag: `nudge-${g.id}`,
+            goalId: g.id,
+            actions: [
+              { action: 'done', title: '✓ Done' },
+              { action: 'open', title: 'Open' },
+            ],
+          },
+          'nudge'
+        );
+        fired.push({ goalId: g.id, kind: 'nudge' });
+      }
+      continue;
+    }
+
     if (g.remindAtMinutes == null) continue;
 
     const dayBit = 1 << dow;
