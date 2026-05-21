@@ -79,7 +79,9 @@ export default async function GoalDetailPage({ params }: { params: Promise<{ id:
   return (
     <>
       <Nav />
-      <main className="max-w-3xl mx-auto px-4 py-8 space-y-6 animate-fade-in">
+      <main
+        className={`${isTodo ? 'max-w-2xl' : 'max-w-6xl'} mx-auto px-4 py-8 space-y-6 animate-fade-in`}
+      >
         <Link
           href="/goals"
           className="inline-flex items-center gap-1.5 text-sm text-muted hover:text-fg transition-colors"
@@ -127,18 +129,37 @@ export default async function GoalDetailPage({ params }: { params: Promise<{ id:
           </div>
         )}
 
-        {!goal.archivedAt && !goal.pausedUntil && (
-          <div className="card p-5">
-            <p className="text-sm font-semibold mb-3">
-              {isTodo ? 'Mark this done when you finish it' : `Check in for today · ${today}`}
-            </p>
-            <CheckInForm goal={goal} todayEntry={todayEntry} />
-          </div>
-        )}
-
-        {!isTodo && (
+        {isTodo ? (
           <>
-            <div className="card p-5">
+            {!goal.archivedAt && !goal.pausedUntil && (
+              <div className="card p-5">
+                <p className="text-sm font-semibold mb-3">Mark this done when you finish it</p>
+                <CheckInForm goal={goal} todayEntry={todayEntry} />
+              </div>
+            )}
+            <details className="card p-5 group">
+              <summary className="flex items-center gap-2 cursor-pointer text-sm font-semibold list-none">
+                <Pencil size={16} className="text-accent" />
+                Edit goal
+              </summary>
+              <div className="mt-4 pt-4 border-t border-border">
+                <GoalForm goal={goal} />
+              </div>
+            </details>
+          </>
+        ) : (
+          /* Desktop: trend + history fill the wide left column; check-in + edit sit in the
+             right column. Explicit grid placement keeps the mobile DOM order intact
+             (check-in → trend → history → edit). */
+          <div className="lg:grid lg:grid-cols-3 lg:gap-6 lg:items-start space-y-6 lg:space-y-0">
+            {!goal.archivedAt && !goal.pausedUntil && (
+              <div className="card p-5 lg:col-start-3 lg:row-start-1">
+                <p className="text-sm font-semibold mb-3">Check in for today · {today}</p>
+                <CheckInForm goal={goal} todayEntry={todayEntry} />
+              </div>
+            )}
+
+            <div className="card p-5 lg:col-span-2 lg:col-start-1 lg:row-start-1">
               <p className="text-sm font-semibold mb-3">
                 Trend
                 <span className="text-muted font-normal">
@@ -154,22 +175,22 @@ export default async function GoalDetailPage({ params }: { params: Promise<{ id:
               />
             </div>
 
-            <div className="card p-5">
+            <div className="card p-5 lg:col-span-2 lg:col-start-1 lg:row-start-2">
               <p className="text-sm font-semibold mb-3">History</p>
               <Heatmap cells={[...cellMap.values()]} weeks={26} />
             </div>
-          </>
-        )}
 
-        <details className="card p-5 group">
-          <summary className="flex items-center gap-2 cursor-pointer text-sm font-semibold list-none">
-            <Pencil size={16} className="text-accent" />
-            Edit goal
-          </summary>
-          <div className="mt-4 pt-4 border-t border-border">
-            <GoalForm goal={goal} />
+            <details className="card p-5 group lg:col-start-3 lg:row-start-2">
+              <summary className="flex items-center gap-2 cursor-pointer text-sm font-semibold list-none">
+                <Pencil size={16} className="text-accent" />
+                Edit goal
+              </summary>
+              <div className="mt-4 pt-4 border-t border-border">
+                <GoalForm goal={goal} />
+              </div>
+            </details>
           </div>
-        </details>
+        )}
       </main>
     </>
   );

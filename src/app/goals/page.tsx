@@ -66,7 +66,7 @@ export default async function GoalsPage() {
   return (
     <>
       <Nav />
-      <main className="max-w-3xl mx-auto px-4 py-8 space-y-5 animate-fade-in">
+      <main className="max-w-6xl mx-auto px-4 py-8 space-y-5 animate-fade-in">
         <header className="flex items-center justify-between">
           <h1 className="text-2xl font-bold tracking-tight">Goals</h1>
           <Link href="/goals/new" className="btn-primary">
@@ -75,28 +75,32 @@ export default async function GoalsPage() {
           </Link>
         </header>
 
-        <div className="space-y-2.5">
-          {active.map((g) => (
-            <GoalRow key={g.id} g={g} />
-          ))}
-          {active.length === 0 && (
-            <div className="card p-8 text-center text-sm text-muted flex flex-col items-center gap-3">
-              <Circle size={28} className="text-muted-2" />
-              No active goals yet.
-              <Link href="/goals/new" className="btn-primary">
-                <Plus size={16} />
-                New goal
-              </Link>
-            </div>
-          )}
-        </div>
+        {active.length > 0 && (
+          <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+            {active.map((g) => (
+              <GoalRow key={g.id} g={g} />
+            ))}
+          </div>
+        )}
+        {active.length === 0 && (
+          <div className="card p-10 text-center text-sm text-muted flex flex-col items-center gap-3">
+            <Circle size={28} className="text-muted-2" />
+            No active goals yet.
+            <Link href="/goals/new" className="btn-primary">
+              <Plus size={16} />
+              New goal
+            </Link>
+          </div>
+        )}
 
         {archived.length > 0 && (
           <div className="space-y-2.5 pt-2">
             <h2 className="text-sm font-semibold text-muted px-1">Archived</h2>
-            {archived.map((g) => (
-              <GoalRow key={g.id} g={g} dim />
-            ))}
+            <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+              {archived.map((g) => (
+                <GoalRow key={g.id} g={g} dim />
+              ))}
+            </div>
           </div>
         )}
       </main>

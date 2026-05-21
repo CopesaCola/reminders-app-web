@@ -14,7 +14,7 @@ export function Nav() {
   const path = usePathname();
   return (
     <nav className="sticky top-0 z-40 bg-bg/80 backdrop-blur-md border-b border-border">
-      <div className="max-w-3xl mx-auto px-4 h-16 flex items-center justify-between">
+      <div className="max-w-6xl mx-auto px-4 h-16 flex items-center justify-between">
         <Link href="/" className="flex items-center gap-2 font-semibold tracking-tight">
           <span className="grid place-items-center w-8 h-8 rounded-xl bg-accent-solid text-accent-fg shadow-card">
             <CalendarCheck size={18} strokeWidth={2.5} />

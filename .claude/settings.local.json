@@ -21,7 +21,8 @@
       "Read(//c/Users/Graham/.claude/plugins/marketplaces/ui-ux-pro-max-skill/.claude/skills/**)",
       "Bash(find C:/Users/Graham/.claude/plugins/marketplaces/ui-ux-pro-max-skill/.claude/skills '\\(' -name *.py -o -name *.csv '\\)')",
       "Bash(npm install *)",
-      "Bash(npm run *)"
+      "Bash(npm run *)",
+      "Bash(git reset *)"
     ]
   }
 }

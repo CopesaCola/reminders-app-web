@@ -2,7 +2,7 @@ import Link from 'next/link';
 import { db } from '@/lib/db';
 import { goals, entries } from '@/lib/schema';
 import { isNull, gte, asc, desc } from 'drizzle-orm';
-import { Flame, Plus, Target, CircleCheck } from 'lucide-react';
+import { Flame, Plus, Target, CircleCheck, ListChecks, Trophy } from 'lucide-react';
 import { Nav } from '@/components/Nav';
 import { Heatmap } from '@/components/Heatmap';
 import { CheckInForm } from '@/components/CheckInForm';
@@ -20,6 +20,20 @@ function greeting(): string {
 }
 
 const periodWord = (c: string) => (c === 'daily' ? 'today' : c === 'weekly' ? 'this week' : 'this month');
+
+function SummaryStat({ icon: Icon, value, label }: { icon: any; value: string; label: string }) {
+  return (
+    <div className="card p-4 flex items-center gap-3">
+      <span className="grid place-items-center w-10 h-10 rounded-xl bg-accent-soft text-accent shrink-0">
+        <Icon size={20} />
+      </span>
+      <div className="leading-tight">
+        <div className="text-xl font-bold tnum">{value}</div>
+        <div className="text-xs text-muted">{label}</div>
+      </div>
+    </div>
+  );
+}
 
 export default async function DashboardPage() {
   const today = localDateStr();
@@ -63,6 +77,13 @@ export default async function DashboardPage() {
   }
   const openTodos = todoGoals.filter((t) => !t.completedAt).length;
 
+  // Longest current streak among active recurring goals (for the desktop summary).
+  let maxStreak = 0;
+  for (const g of recurringGoals) {
+    const s = computeStreak(g, entriesByGoal.get(g.id) ?? [], today).current;
+    if (s > maxStreak) maxStreak = s;
+  }
+
   // Heatmap: fraction of daily recurring goals hit each day over ~6 months.
   const dailyHitCount = new Map<string, { hit: number; total: number }>();
   for (const g of recurringGoals) {
@@ -93,7 +114,7 @@ export default async function DashboardPage() {
   return (
     <>
       <Nav />
-      <main className="max-w-3xl mx-auto px-4 py-8 space-y-6 animate-fade-in">
+      <main className="max-w-6xl mx-auto px-4 py-8 space-y-6 animate-fade-in">
         {/* Header */}
         <header className="flex items-end justify-between gap-4">
           <div>
@@ -108,9 +129,22 @@ export default async function DashboardPage() {
           </div>
           <Link href="/goals/new" className="btn-primary shrink-0">
             <Plus size={16} />
-            New
+            New goal
           </Link>
         </header>
+
+        {/* Desktop summary stats — hidden on mobile (the heading already covers today). */}
+        {goalRows.length > 0 && (
+          <div className="hidden lg:grid grid-cols-3 gap-4">
+            <SummaryStat
+              icon={ListChecks}
+              value={dueCount === 0 ? '—' : `${hitCount}/${dueCount}`}
+              label="Goals done today"
+            />
+            <SummaryStat icon={Flame} value={String(maxStreak)} label="Longest active streak" />
+            <SummaryStat icon={CircleCheck} value={String(openTodos)} label="Open to-dos" />
+          </div>
+        )}
 
         {/* Heatmap */}
         {heatCells.length > 0 && (
@@ -153,7 +187,7 @@ export default async function DashboardPage() {
 
         {/* Recurring goals */}
         {recurringGoals.length > 0 && (
-          <section className="space-y-2.5">
+          <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
             {recurringGoals.map((g) => {
               const gEntries = entriesByGoal.get(g.id) ?? [];
               const todayEntry = gEntries.find((e) => e.entryDate === today) ?? null;
@@ -223,6 +257,7 @@ export default async function DashboardPage() {
               To-do
               {openTodos > 0 && <span className="chip-muted tnum">{openTodos}</span>}
             </h2>
+            <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
             {todoGoals.map((g) => {
               const done = g.completedAt != null;
               const overdue = !done && g.dueDate != null && g.dueDate < today;
@@ -256,6 +291,7 @@ export default async function DashboardPage() {
                 </div>
               );
             })}
+            </div>
           </section>
         )}
       </main>
