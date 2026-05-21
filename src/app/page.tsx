@@ -75,7 +75,9 @@ export default async function DashboardPage() {
     dueCount++;
     if (periodHits(g, total)) hitCount++;
   }
-  const openTodos = todoGoals.filter((t) => !t.completedAt).length;
+  // Once a to-do is done it drops off the dashboard (still kept in Goals for the record).
+  const openTodoGoals = todoGoals.filter((t) => !t.completedAt);
+  const openTodos = openTodoGoals.length;
 
   // Longest current streak among active recurring goals (for the desktop summary).
   let maxStreak = 0;
@@ -249,48 +251,51 @@ export default async function DashboardPage() {
           </section>
         )}
 
-        {/* To-dos */}
-        {todoGoals.length > 0 && (
+        {/* To-dos — only open ones; completed items drop off automatically. */}
+        {openTodoGoals.length > 0 && (
           <section className="space-y-2.5">
             <h2 className="flex items-center gap-2 text-sm font-semibold text-muted px-1">
               <CircleCheck size={16} />
               To-do
-              {openTodos > 0 && <span className="chip-muted tnum">{openTodos}</span>}
+              <span className="chip-muted tnum">{openTodos}</span>
             </h2>
             <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
-            {todoGoals.map((g) => {
-              const done = g.completedAt != null;
-              const overdue = !done && g.dueDate != null && g.dueDate < today;
-              const dueToday = !done && g.dueDate === today;
-              return (
-                <div key={g.id} className={`card p-3.5 ${done ? 'opacity-60' : ''}`}>
-                  <div className="flex items-center justify-between gap-3">
+              {openTodoGoals.map((g) => {
+                const overdue = g.dueDate != null && g.dueDate < today;
+                const dueToday = g.dueDate === today;
+                return (
+                  <div key={g.id} className="card p-3.5">
                     <div className="flex items-center gap-3 min-w-0">
                       <CheckInForm goal={g} compact />
                       <div className="min-w-0">
                         <Link
                           href={`/goals/${g.id}`}
-                          className={`font-medium hover:text-accent transition-colors truncate block ${
-                            done ? 'line-through text-muted' : ''
-                          }`}
+                          className="font-medium hover:text-accent transition-colors truncate block"
                         >
                           {g.title}
                         </Link>
                         {g.dueDate && (
                           <span
                             className={`text-xs ${
-                              overdue ? 'text-bad font-medium' : dueToday ? 'text-warn font-medium' : 'text-muted'
+                              overdue
+                                ? 'text-bad font-medium'
+                                : dueToday
+                                  ? 'text-warn font-medium'
+                                  : 'text-muted'
                             }`}
                           >
-                            {overdue ? `Overdue · ${g.dueDate}` : dueToday ? 'Due today' : `Due ${g.dueDate}`}
+                            {overdue
+                              ? `Overdue · ${g.dueDate}`
+                              : dueToday
+                                ? 'Due today'
+                                : `Due ${g.dueDate}`}
                           </span>
                         )}
                       </div>
                     </div>
                   </div>
-                </div>
-              );
-            })}
+                );
+              })}
             </div>
           </section>
         )}
